@@ -15,9 +15,6 @@ class GDS2
   # 
   # This is GDS2, a module for creating programs to read and/or write GDS2 files.
   # 
-  # Send feedback/suggestions to
-  # perl -le '$_=q(Zpbhgnpe@pvnt.uxa);$_=~tr/n-sa-gt-zh-mZ/a-zS/;print;'
-  # 
   # = COPYRIGHT
   # 
   # Author: Ken Schumack (c) 1999-2017. All rights reserved.
@@ -59,9 +56,6 @@ class GDS2
   #    use IO::File
   #end
 
-
-  #no strict %w( refs )
-
   #isLittleEndian = false; #default - was developed on a BigEndian machine
   #isLittleEndian = true if config['byteorder'] =~ /^1/ ; ## Linux mswin32 cygwin vms
 
@@ -77,7 +71,7 @@ class GDS2
   BIT_ARRAY    = 1
   INTEGER_2    = 2
   INTEGER_4    = 3
-  REAL_4       = 4; ## NOT supported, should not be found in any GDS2
+  REAL_4       = 4  # NOT supported, should not be found in any GDS2
   REAL_8       = 5
   ASCII_STRING = 6
   ############################################################################
@@ -156,9 +150,6 @@ class GDS2
   ##   a new library. Had 1 to 32 entries with group numbers, user numbers and access rights.
   #############################################################################################
 
-  # class inst vars
-  @strspace = ''
-  @elmspace = ''
 
   RECORDTYPENUMBERS = {
     'HEADER'      => HEADER,
@@ -428,6 +419,10 @@ class GDS2
   end
   @g_epsilon = @g_epsilon.to_f # ensure it's a number
 
+  # More class inst vars.  Probably better ways to do this..
+  @strspace = ''
+  @elmspace = ''
+
   # class method accessors to class-instance-variables
   class << self
     attr_reader :g_fltlen, :g_epsilon
@@ -520,8 +515,8 @@ class GDS2
   # == new - open gds2 file
   # 
   #   usage:
-  #   my $gds2File  = new GDS2(-fileName => "filename.gds2"); ## to read
-  #   my $gds2File2 = new GDS2(-fileName => ">filename.gds2"); ## to write
+  #   my $gds2File  = GDS2.new(-fileName => "filename.gds2"); ## to read
+  #   my $gds2File2 = GDS2.new(-fileName => ">filename.gds2"); ## to write
   # 
   #   -or- provide your own fileHandle:
   # 
@@ -688,7 +683,7 @@ class GDS2
   def printInitLib (name: nil, isoDate: false, uunit: false, dbUnit: 1e-9)
     
     unless name 
-      raise "printInitLib expects a library name. Missing -name => 'name'"
+      raise "printInitLib expects a library name. Missing name: 'name'"
     end
     #################################################
     if !uUnit 
@@ -715,7 +710,7 @@ class GDS2
   # == printBgnstr - Does all the things needed to start a structure definition
   # 
   #    usage:
-  #     $gds2File.printBgnstr(-name => "nand3" ## writes BGNSTR and STRNAME records
+  #     $gds2File.printBgnstr(name: "nand3" ## writes BGNSTR and STRNAME records
   #                              -isoDate => 1|0  ## (optional) use ISO 4 digit date 2001 vs 101
   #                              );
   # 
@@ -730,7 +725,7 @@ class GDS2
     strName = arg['-name']
     unless   strName 
       
-      raise "bgnStr expects a structure name. Missing -name => 'name'"
+      raise "bgnStr expects a structure name. Missing name: 'name'"
     end
     createTime = arg['-createTime']
     isoDate = arg['-isoDate']
@@ -1035,7 +1030,7 @@ class GDS2
     sname = arg['-name']
     unless   sname 
       
-      raise "printSref expects a name string. Missing -name => 'text'"
+      raise "printSref expects a name string. Missing name: 'text'"
     end
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
     xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
@@ -1135,7 +1130,7 @@ class GDS2
     sname = arg['-name']
     unless   sname 
       
-      raise "printAref expects a sname string. Missing -name => 'text'"
+      raise "printAref expects a sname string. Missing name: 'text'"
     end
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
     xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
@@ -1257,7 +1252,7 @@ class GDS2
     string = arg['-string']
     unless   string 
       
-      raise "printText expects a string. Missing -string => 'text'"
+      raise "printText expects a string. Missing string: 'text'"
     end
     resolution= @Resolution
     x = arg['-x']
@@ -2598,7 +2593,7 @@ class GDS2
     string = arg['-string']
     unless   string 
       
-      raise "printAttrtable expects a string. Missing -string => 'text'"
+      raise "printAttrtable expects a string. Missing string: 'text'"
     end
     self.printGds2Record(type: 'ATTRTABLE',data: string)
   end
@@ -2614,7 +2609,7 @@ class GDS2
 
     
     num = arg['-num']
-    raise "printBgnextn expects a extension number. Missing -num => #.#" unless num 
+    raise "printBgnextn expects a extension number. Missing num: #.#" unless num 
 
     resolution = @Resolution
     if  num >= 0
@@ -2666,7 +2661,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printBoxtype expects a number. Missing -num => #"
+      raise "printBoxtype expects a number. Missing num: #"
     end
     self.printGds2Record(type: 'BOXTYPE',data: num)
   end
@@ -2737,7 +2732,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printElkey expects a number. Missing -num => #.#"
+      raise "printElkey expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'ELKEY',data: num)
   end
@@ -2765,7 +2760,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printEndextn expects a extension number. Missing -num => #.#"
+      raise "printEndextn expects a extension number. Missing num: #.#"
     end
     resolution= @Resolution
     if  num >= 0
@@ -2818,7 +2813,7 @@ class GDS2
     string = arg['-string']
     unless   string 
       
-      raise "printFonts expects a string. Missing -string => 'text'"
+      raise "printFonts expects a string. Missing string: 'text'"
     end
     self.printGds2Record(type: 'FONTS',data: string)
   end
@@ -2830,7 +2825,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printFormat expects a number. Missing -num => #.#"
+      raise "printFormat expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'FORMAT',data: num)
   end
@@ -2847,7 +2842,7 @@ class GDS2
   # 
   #   usage:
   #     $gds2File.printHeader(
-  #                   -num => #  ## optional, defaults to 3. valid revs are 0,3,4,5,and 600
+  #                   num: #  ## optional, defaults to 3. valid revs are 0,3,4,5,and 600
   #                 );
   # 
 
@@ -2867,7 +2862,7 @@ class GDS2
   # 
   #   usage:
   #     $gds2File.printLayer(
-  #                   -num => #  ## optional, defaults to 0.
+  #                   num: #  ## optional, defaults to 0.
   #                 );
   # 
 
@@ -2899,7 +2894,7 @@ class GDS2
     libName = arg['-name']
     unless   libName 
       
-      raise "printLibname expects a library name. Missing -name => 'name'"
+      raise "printLibname expects a library name. Missing name: 'name'"
     end
     self.printGds2Record(type: 'LIBNAME',data: libName)
   end
@@ -2918,7 +2913,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printLinkkeys expects a number. Missing -num => #.#"
+      raise "printLinkkeys expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'LINKKEYS',data: num)
   end
@@ -2930,7 +2925,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printLinktype expects a number. Missing -num => #.#"
+      raise "printLinktype expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'LINKTYPE',data: num)
   end
@@ -2940,7 +2935,7 @@ class GDS2
   # 
   #   usage:
   #     $gds2File.printPathtype(
-  #                   -num => #  ## optional, defaults to 0.
+  #                   num: #  ## optional, defaults to 0.
   #                 );
   # 
 
@@ -2957,7 +2952,7 @@ class GDS2
   # 
   #   usage:
   #     $gds2File.printMag(
-  #                   -num => #.#  ## optional, defaults to 0.0
+  #                   num: #.#  ## optional, defaults to 0.0
   #                 );
   # 
 
@@ -2977,7 +2972,7 @@ class GDS2
     string = arg['-string']
     unless   string 
       
-      raise "printMask expects a string. Missing -string => 'text'"
+      raise "printMask expects a string. Missing string: 'text'"
     end
     self.printGds2Record(type: 'MASK',data: string)
   end
@@ -2994,7 +2989,7 @@ class GDS2
   # 
   #   usage:
   #     $gds2File.printNodetype(
-  #                   -num => #
+  #                   num: #
   #                 );
   # 
 
@@ -3004,7 +2999,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printNodetype expects a number. Missing -num => #"
+      raise "printNodetype expects a number. Missing num: #"
     end
     self.printGds2Record(type: 'NODETYPE',data: num)
   end
@@ -3016,7 +3011,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printPlex expects a number. Missing -num => #.#"
+      raise "printPlex expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'PLEX',data: num)
   end
@@ -3069,7 +3064,7 @@ class GDS2
   # == printPropattr - prints a property id number
   # 
   #   usage:
-  #     $gds2File.printPropattr( -num => # );
+  #     $gds2File.printPropattr( num: # );
   # 
 
   def printPropattr (num = nil)
@@ -3081,7 +3076,7 @@ class GDS2
   # == printPropvalue - prints a property value string
   # 
   #   usage:
-  #     $gds2File.printPropvalue( -string => $string );
+  #     $gds2File.printPropvalue( string: $string );
   # 
 
   def printPropvalue (string = nil)
@@ -3104,7 +3099,7 @@ class GDS2
   # == printSname - prints a SNAME string
   # 
   #   usage:
-  #     $gds2File.printSname( -name => $cellName );
+  #     $gds2File.printSname( name: $cellName );
   # 
 
   def printSname (name = nil)
@@ -3156,7 +3151,7 @@ class GDS2
   # == printString - prints a STRING record
   # 
   #   usage:
-  #     $gds2File.printSname( -string => $text );
+  #     $gds2File.printSname( string: $text );
   # 
 
   def printString (*arg)
@@ -3165,7 +3160,7 @@ class GDS2
     string = arg['-string']
     unless   string 
       
-      raise "printString expects a string. Missing -string => 'text'"
+      raise "printString expects a string. Missing string: 'text'"
     end
     self.printGds2Record(type: 'STRING',data: string)
   end
@@ -3174,7 +3169,7 @@ class GDS2
   # == printStrname - prints a structure name string
   # 
   #   usage:
-  #     $gds2File.printStrname( -name => $cellName );
+  #     $gds2File.printStrname( name: $cellName );
   # 
 
   def printStrname (name: nil)
@@ -3189,7 +3184,7 @@ class GDS2
   ############################################################################
 
   def printStyptable (string: nil)
-    raise "printStyptable expects a string. Missing -string => 'text'" unless   string 
+    raise "printStyptable expects a string. Missing string: 'text'" unless   string 
     self.printGds2Record(type: 'STYPTABLE', data: string)
   end
   ############################################################################
@@ -3200,7 +3195,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printTapecode expects a number. Missing -num => #.#"
+      raise "printTapecode expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'TAPECODE',data: num)
   end
@@ -3212,7 +3207,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printTapenum expects a number. Missing -num => #.#"
+      raise "printTapenum expects a number. Missing num: #.#"
     end
     self.printGds2Record(type: 'TAPENUM',data: num)
   end
@@ -3228,7 +3223,7 @@ class GDS2
   # == printTexttype - prints a text type number
   # 
   #   usage:
-  #     $gds2File.printTexttype( -num => # );
+  #     $gds2File.printTexttype( num: # );
   # 
 
   def printTexttype (*arg)
@@ -3237,7 +3232,7 @@ class GDS2
     num = arg['-num']
     unless   num 
       
-      raise "printTexttype expects a number. Missing -num => #"
+      raise "printTexttype expects a number. Missing num: #"
     end
     num = 0 if  num < 0 
     self.printGds2Record(type: 'TEXTTYPE',data: num)
@@ -3281,7 +3276,7 @@ class GDS2
     @DBUnits = dbUnit
     #################################################
 
-    self.printGds2Record(type: 'UNITS',data: [uUnit,dbUnit])
+    self.printGds2Record(type: 'UNITS', data: [uUnit,dbUnit])
   end
   ############################################################################
 
@@ -3295,18 +3290,17 @@ class GDS2
   # == printWidth - prints a width number
   # 
   #   usage:
-  #     $gds2File.printWidth( -num => # );
+  #     $gds2File.printWidth( num: # );
   # 
 
-  def printWidth (*arg)
+  def printWidth (num: 0)
 
     
-    width = arg['-num']
-    if  (!  width)||(width <= 0) 
-      
-      width=0
+    width = num
+    if !width || width <= 0
+      width = 0
     end
-    self.printGds2Record(type: 'WIDTH',data: width) if  width 
+    self.printGds2Record(type: 'WIDTH', data: width) if width 
   end
   ############################################################################
 
@@ -3331,12 +3325,12 @@ class GDS2
       
       raise "printXy expects an xy array reference. Missing -xy => \\\#{array}"
     end
-    if   xyInt 
+    if xyInt 
       
       xy = xyInt
       resolution = 1
     end
-    xyTmp=[]; ##don't pollute array passed in
+    xyTmp = [] ##don't pollute array passed in
     xy.each do |xyi| ## e.g. 3.4 in -> 3400 out
       
       if  xyi >= 0
