@@ -27,3 +27,4 @@ gds2File.printBoundary(
 );
 gds2File.printEndstr;
 gds2File.printEndlib();
+gds2File.close
