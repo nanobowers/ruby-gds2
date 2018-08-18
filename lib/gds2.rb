@@ -575,8 +575,8 @@ class GDS2
   # private method to clean up number
   def cleanExpNum(inum)
     num = format("%0.#{GDS2.g_fltlen}e", inum)
-    num.sub!(/([1-9])0+e/, '\\1e')
-    num.sub!(/(\d)\.0+e/, '\\1e')
+    num.sub!(/([1-9])0+e/, "\\1e")
+    num.sub!(/(\d)\.0+e/, "\\1e")
     num
   end
 
@@ -584,8 +584,8 @@ class GDS2
   # private method to clean up number
   def cleanFloatNum(inum)
     num = format("%0.#{GDS2.g_fltlen}f", inum)
-    num.sub!(/([1-9])0+$/, '\\1e')
-    num.sub!(/(\d)\.0+$/, '\\1e')
+    num.sub!(/([1-9])0+$/, "\\1")
+    num.sub!(/(\d)\.0+$/, "\\1")
     num
   end
 
@@ -610,24 +610,20 @@ class GDS2
   #                                    ## systems used 2048 byte blocks
   #
 
-  def close(*arg)
-    markEnd = arg['-markEnd']
-    pad = arg['-pad']
-    if  markEnd && markEnd
-
+  def close (markEnd: nil, pad: nil)
+    if markEnd
       fh = @FileHandle
       fh.print "\x1a\x04"; # a ^Z and a ^D
       @BytesDone += 2
     end
     if pad && (pad > 0)
-
       fh = @FileHandle
       fh.flush
       fh.seek(0, SEEK_END)
       fileSize = fh.tell
       padSize = pad - (fileSize % pad)
       padSize = 0 if padSize == pad
-      (0..padSize).each do |_i|
+      (0..padSize).each do
         fh.print "\0" ## a null
       end
     end
@@ -661,9 +657,8 @@ class GDS2
   #
 
   def printInitLib(name: nil, isoDate: false, uUnit: false, dbUnit: 1e-9)
-    unless name
-      raise "printInitLib expects a library name. Missing name: 'name'"
-    end
+    raise "printInitLib expects a library name. Missing name: 'name'" unless name
+
     #################################################
     if !uUnit
       uUnit = 0.001
@@ -743,7 +738,6 @@ class GDS2
     widthi = 0
     widthi = unitWidth.to_i if unitWidth && (unitWidth >= 0)
     if width && (width >= 0.0)
-
       widthi = ((width * resolution) + GDS2::g_epsilon).to_i
     end
     width = widthi
@@ -875,8 +869,8 @@ class GDS2
   def printBoundary(*arg, layer: 0, dataType: 0, xy: nil, xyInt: nil)
     resolution = @Resolution
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    #xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
-    #xy = arg['-xy']; ## $xy should be a reference to an array of reals
+    ## xyInt should be a reference to an array of internal GDS2 format integers
+    ## xy should be a reference to an array of reals
     xyTmp = []; # #don't pollute array passed in
     unless  xy || xyInt
       raise "printBoundary expects an xy array reference. Missing -xy => \\\#{array}"
@@ -966,21 +960,16 @@ class GDS2
       reflect = 1
       useSTRANS = true
     end
-    #mag = arg['-mag']
+
     if  !mag || (mag <= 0)
-
       mag = 0
-
     else
-
       mag = cleanFloatNum(mag)
       useSTRANS = true
     end
-    #angle = arg['-angle']
+
     if !angle
-
       angle = -1; # not really... just means not specified
-
     else
 
       angle = posAngle(angle)
@@ -1005,8 +994,8 @@ class GDS2
     printGds2Record(type: 'XY', data: xyTmp)
     printGds2Record(type: 'ENDEL')
   end
-  ############################################################################
 
+  ############################################################################
   # == printAref - prints a gds2 Array REFerence
   #
   #   usage:
@@ -1028,7 +1017,6 @@ class GDS2
   #     best not to specify angle or mag if not needed
   #     xyList: 1st coord: origin, 2nd coord: X of col * xSpacing + origin, 3rd coord: Y of row * ySpacing + origin
   #
-
   # <AREF>::= AREF [ELFLAGS] [PLEX] SNAME [<strans>] COLROW XY
   #  <strans>::= STRANS [MAG] [ANGLE]
   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1038,26 +1026,21 @@ class GDS2
     #name = arg['-name']
     raise "printAref expects a sname string. Missing name: 'text'" unless name
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    #xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
-    #xy = arg['-xy']; ## $xy should be a reference to an array of reals
+    ## $xyInt should be a reference to an array of internal GDS2 format integers
+    ## $xy should be a reference to an array of reals
     unless  xy || xyInt
-
       raise "printAref expects an xy array reference. Missing -xy => \\\#{array}"
     end
-    if   xyInt
-
+    if xyInt
       xy = xyInt
       resolution = 1
     end
     printGds2Record(type: 'AREF')
     printGds2Record(type: 'SNAME', data: name)
-    #reflect = arg['-reflect']
+
     if !reflect || (reflect <= 0)
-
       reflect = 0
-
     else
-
       reflect = 1
       useSTRANS = true
     end
@@ -1083,7 +1066,7 @@ class GDS2
     end
     if useSTRANS
 
-      data = reflect_to_s + '0' * 15; ## 16 'bit' string
+      data = reflect.to_s + '0' * 15; ## 16 'bit' string
       printGds2Record(type: 'STRANS', data: data)
       printGds2Record(type: 'MAG', data: mag) if  mag
       printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
@@ -1245,20 +1228,19 @@ class GDS2
 
               posAngle(angle)
             end
-    printGds2Record('-type' => 'TEXT')
-    printGds2Record('-type' => 'LAYER', '-data' => layer)
-    printGds2Record('-type' => 'TEXTTYPE', '-data' => textType)
+    printGds2Record(type: 'TEXT')
+    printGds2Record(type: 'LAYER', data: layer)
+    printGds2Record(type: 'TEXTTYPE', data: textType)
     printGds2Record(type: 'PRESENTATION', data: presString) if font || top || middle || bottom || bottom || left || center || right
     if useSTRANS
-
       data = reflect + '0' * 15; ## 16 'bit' string
-      printGds2Record('-type' => 'STRANS', '-data' => data)
+      printGds2Record(type: 'STRANS', data: data)
     end
-    printGds2Record('-type' => 'MAG', '-data' => mag) if  mag
-    printGds2Record('-type' => 'ANGLE', '-data' => angle) if angle >= 0
-    printGds2Record('-type' => 'XY', '-data' => [x, y])
-    printGds2Record('-type' => 'STRING', '-data' => string)
-    printGds2Record('-type' => 'ENDEL')
+    printGds2Record(type: 'MAG', data: mag) if  mag
+    printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
+    printGds2Record(type: 'XY', data: [x, y])
+    printGds2Record(type: 'STRING', data: string)
+    printGds2Record(type: 'ENDEL')
   end
   ############################################################################
 
@@ -1512,7 +1494,7 @@ def printGds2Record(type: nil, data: nil, asciiData: nil, snap: nil, scale: 1)
   data = [] unless data
   recordLength = nil; ## 1st 2 bytes for length 3rd for recordType 4th for dataType
   if type == 'RECORD' ## special case...
-
+  
     if GDS2.isLittleEndian
 
       length = data[0][0..1]
@@ -1580,7 +1562,7 @@ def printGds2Record(type: nil, data: nil, asciiData: nil, snap: nil, scale: 1)
 
         elsif  recordDataType == REAL_4 ## 4 byte real
 
-          raise '4-byte reals are not supported'
+          raise NotImplementedError, '4-byte reals are not supported'
         end
       end
 
@@ -1783,7 +1765,7 @@ end
 
       raise 'printRecord does not take -type. Perhaps you meant to use printGds2Record?'
     end
-    printGds2Record('-type' => 'record', '-data' => record)
+    printGds2Record(type: 'record', data: record)
   end
   ############################################################################
 
@@ -1963,7 +1945,7 @@ end
 
     elsif  @DataType == REAL_4   ## 4 byte real
 
-      raise '4-byte reals are not supported'
+      raise NotImplementedError, '4-byte reals are not supported'
 
     elsif  @DataType == REAL_8   ## 8 byte real - UNITS, MAG, ANGLE
 
@@ -1975,26 +1957,24 @@ end
 
         data = @FileHandle.read(1); ## sign bit and 7 exponent bits
         @Record += data
-        negative = data.unpack('B').first; ## sign bit
-        exponent = data.unpack('C').first
-        exponent -= if negative
-                      192; ## 128 + 64
-                    else
-                      64
-                    end
+        negative = data.unpack1('B').to_i ## sign bit
+        exponent = data.unpack1('C')
+        #p [:exp, data.ord, negative, exponent]
+        exponent -= negative.zero? ? 64 : 192
         data = @FileHandle.read(7) ## mantissa bits
-        mantdata = data.unpack('b*').first
+        mantdata = data.unpack1('b*')
+        #p [:exp1, negative, exponent, mantdata]
         @Record += data
         mantissa = 0.0
         (0..6).each do |j|
           byteString = mantdata[(0 + j * 8)..(7 + j * 8)]
-          # p byteString.split(//)
-          byte = byteString.split(//).pack 'b*'
-          byte = byte.unpack('C').first
+          byte = [byteString].pack('b*').unpack1('C')
           mantissa += byte / (256.0**(j + 1))
+          #p [:exp2, byte, byteString, mantissa]
         end
         real = mantissa * (16**exponent)
-        real = (0 - real) if negative
+        real = (0 - real) if negative != 0
+        #p [:exp3, real, mantissa]
         if RECORDTYPESTRINGS[@RecordType] == 'UNITS'
           if @UUnits == -1.0
             @UUnits = real
@@ -2037,7 +2017,6 @@ end
   #     puts "found STRNAME";
   #   end
   #
-
   def returnRecordType
     @RecordType
   end
@@ -2047,9 +2026,8 @@ end
   #
   #   usage:
   #   if (gds2File.returnRecordTypeString eq 'LAYER')
-  #   {
   #       code goes here...
-  #   }
+  #   end
   #
 
   def returnRecordTypeString
@@ -2182,7 +2160,7 @@ end
 
       elsif @DataType == REAL_8
 
-        if  compact
+        if compact
           string += ' ' unless string =~ / (a|m|pt|dt|tt)$/i
         else
           string += '  '
@@ -2242,9 +2220,8 @@ end
   #
   #   example:
   #   while (gds2File.readGds2Record)
-  #   {
-  #       @xy = gds2File.returnXyAsArray if (gds2File.isXy);
-  #   }
+  #       xy = gds2File.returnXyAsArray if gds2File.isXy;
+  #   end
   #
 
   def returnXyAsArray(asInteger: true, withClosure: true)
@@ -2284,9 +2261,7 @@ end
   #   }
   #
 
-  def returnRecordAsPerl
-    (*arg) = @_
-
+  def returnRecordAsPerl (*arg)
     gds2File = arg['-gds2File']
     gds2File ||= 'gds2File'
 
@@ -2367,31 +2342,22 @@ end
   # == printAngle - prints ANGLE record
   #
   #   usage:
-  #     gds2File.printAngle(-num=>#.#);
+  #     gds2File.printAngle(num: #.#);
   #
 
-  def printAngle(*arg)
-    angle = arg['-num']
-    angle = if angle
-
-              posAngle(angle)
-
-            else
-
-              -1; # not really... just means not specified
-            end
-    printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
+  def printAngle(num: nil)
+    printGds2Record(type: 'ANGLE', data: posAngle(num)) if num
   end
   ############################################################################
 
   # == printAttrtable - prints ATTRTABLE record
   #
   #   usage:
-  #     gds2File.printAttrtable(-string=>$string);
+  #     gds2File.printAttrtable(string: $string);
   #
 
   def printAttrtable(string: nil)
-    raise "printAttrtable expects a string. Missing string: 'text'" unless   string
+    raise "printAttrtable expects a string. Missing string: 'text'" unless string
     printGds2Record(type: 'ATTRTABLE', data: string)
   end
   ############################################################################
@@ -2399,7 +2365,7 @@ end
   # == printBgnextn - prints BGNEXTN record
   #
   #   usage:
-  #     gds2File.printBgnextn(-num=>#.#);
+  #     gds2File.printBgnextn(num: #.#);
   #
 
   def printBgnextn(num: nil)
@@ -2411,12 +2377,12 @@ end
             int((num * resolution) - GDS2::g_epsilon); end
     printGds2Record(type: 'BGNEXTN', data: num)
   end
-  ############################################################################
 
+  ############################################################################
   # == printBgnlib - prints BGNLIB record
   #
   #   usage:
-  #     gds2File.printBgnlib( isoDate: 0|1 ## (optional) use ISO 4 digit date 2001 vs 101
+  #     gds2File.printBgnlib( isoDate: true|false ## (optional) use ISO 4 digit date 2001 vs 101
   #                          )
   #
 
@@ -2557,7 +2523,6 @@ end
     printGds2Record(type: 'GENERATIONS')
   end
   ############################################################################
-
   # == printHeader - Prints a rev 3 header
   #
   #   usage:
@@ -2565,14 +2530,13 @@ end
   #                   num: #  ## optional, defaults to 3. valid revs are 0,3,4,5,and 600
   #                 );
   #
-
-  def printHeader(*arg)
-    rev = arg['-num']
-    rev ||= 3
-    printGds2Record('-type' => 'HEADER', '-data' => rev)
+  VALID_REVISIONS = [0, 3, 4, 5, 600]
+  def printHeader(num: 3)
+    raise "Num must be one of #{VALID_REVISIONS}" unless VALID_REVISIONS.include?(num)
+    printGds2Record(type: 'HEADER', data: num)
   end
-  ############################################################################
 
+  ############################################################################
   # == printLayer - prints a LAYER number
   #
   #   usage:
@@ -2580,52 +2544,45 @@ end
   #                   num: #  ## optional, defaults to 0.
   #                 );
   #
-
   def printLayer(num: 0)
     printGds2Record(type: 'LAYER', data: layer)
   end
-  ############################################################################
 
+  ############################################################################
   def printLibdirsize
     printGds2Record(type: 'LIBDIRSIZE')
   end
-  ############################################################################
 
+  ############################################################################
   # == printLibname - Prints library name
   #
   #   usage:
   #     printLibname(-name=>$name);
   #
-
-  def printLibname(*arg)
-    libName = arg['-name']
-    unless libName
-
-      raise "printLibname expects a library name. Missing name: 'name'"
-    end
-    printGds2Record(type: 'LIBNAME', data: libName)
+  def printLibname(name: nil)
+    raise "printLibname expects a library name. Missing name: 'name'"    unless name
+    printGds2Record(type: 'LIBNAME', data: name)
   end
-  ############################################################################
 
+  ############################################################################
   def printLibsecur
     printGds2Record(type: 'LIBSECUR')
   end
-  ############################################################################
 
-  def printLinkkeys(*arg)
-    num = arg['-num']
+  ############################################################################
+  def printLinkkeys(num: nil)
     raise 'printLinkkeys expects a number. Missing num: #.#' unless num
     printGds2Record(type: 'LINKKEYS', data: num)
   end
-  ############################################################################
 
+  ############################################################################
   def printLinktype(*arg)
     num = arg['-num']
     raise 'printLinktype expects a number. Missing num: #.#' unless num
     printGds2Record(type: 'LINKTYPE', data: num)
   end
-  ############################################################################
 
+  ############################################################################
   # == printPathtype - prints a PATHTYPE number
   #
   #   usage:
@@ -2634,8 +2591,8 @@ end
   #                 );
   #
 
-  def printPathtype(*arg)
-    pathType = arg['-num']
+  def printPathtype(num: nil)
+    pathType = num
     pathType ||= 0
     printGds2Record(type: 'PATHTYPE', data: pathType) if pathType
   end
@@ -2649,26 +2606,25 @@ end
   #                 );
   #
 
-  def printMag(*arg)
-    mag = arg['-num']
+  def printMag(num: nil)
+    mag = num
     mag = 0 if !mag || (mag <= 0)
     mag = cleanFloatNum(mag)
     printGds2Record(type: 'MAG', data: mag) if mag
   end
-  ############################################################################
 
-  def printMask(*arg)
-    string = arg['-string']
+  ############################################################################
+  def printMask(string: nil)
     raise "printMask expects a string. Missing string: 'text'" unless string
     printGds2Record(type: 'MASK', data: string)
   end
-  ############################################################################
 
+  ############################################################################
   def printNode
     printGds2Record(type: 'NODE')
   end
-  ############################################################################
 
+  ############################################################################
   # == printNodetype - prints a NODETYPE number
   #
   #   usage:
@@ -2676,16 +2632,13 @@ end
   #                   num: #
   #                 );
   #
-
-  def printNodetype(*arg)
-    num = arg['-num']
+  def printNodetype (num: nil)
     raise 'printNodetype expects a number. Missing num: #' unless num
     printGds2Record(type: 'NODETYPE', data: num)
   end
   ############################################################################
 
-  def printPlex(*arg)
-    num = arg['-num']
+  def printPlex (num: nil)
     raise 'printPlex expects a number. Missing num: #.#' unless num
     printGds2Record(type: 'PLEX', data: num)
   end
@@ -2701,7 +2654,7 @@ end
   #                 );
   #
   #   example:
-  #     gds2File.printPresentation(-font=>0,-top,-left);
+  #     gds2File.printPresentation(font: 0,-top,-left);
   #
 
   def printPresentation(*arg)
@@ -2736,7 +2689,7 @@ end
   #     gds2File.printPropattr( num: # );
   #
 
-  def printPropattr(num = nil)
+  def printPropattr(num: nil)
     raise 'printPropattr expects a number. Missing num: #' unless num
     printGds2Record(type: 'PROPATTR', data: num)
   end
@@ -2748,19 +2701,19 @@ end
   #     gds2File.printPropvalue( string: $string );
   #
 
-  def printPropvalue(string = nil)
+  def printPropvalue(string: nil)
     raise "printPropvalue expects a string. Missing string: 'text'" unless string
     printGds2Record(type: 'PROPVALUE', data: string)
   end
 
   ############################################################################
-  def printReflibs(string = nil)
+  def printReflibs(string: nil)
     raise "printReflibs expects a string. Missing string: 'text'" unless string
     printGds2Record(type: 'REFLIBS', data: string)
   end
   ############################################################################
 
-  def printReserved(num = nil)
+  def printReserved(num: nil)
     raise 'printReserved expects a number. Missing num: #.#' unless num
     printGds2Record(type: 'RESERVED', data: num)
   end
@@ -2772,14 +2725,14 @@ end
   #     gds2File.printSname( name: $cellName );
   #
 
-  def printSname(name = nil)
-    raise "printSname expects a cell name. Missing name => 'text'" unless name
+  def printSname(name: nil)
+    raise "printSname expects a cell name. Missing name: 'text'" unless name
     printGds2Record(type: 'SNAME', data: name)
   end
   ############################################################################
 
   def printSpacing
-    raise 'SPACING type not supported'
+    raise NotImplementedError, 'SPACING type not supported'
   end
   ############################################################################
 
@@ -2820,8 +2773,7 @@ end
   #     gds2File.printSname( string: $text );
   #
 
-  def printString(*arg)
-    string = arg['-string']
+  def printString (string: nil)
     raise "printString expects a string. Missing string: 'text'" unless string
     printGds2Record(type: 'STRING', data: string)
   end
@@ -2834,13 +2786,13 @@ end
   #
 
   def printStrname(name: nil)
-    raise "printStrname expects a structure name. Missing name: 'name'" unless strName
+    raise "printStrname expects a structure name. Missing name: 'name'" unless name
     printGds2Record(type: 'STRNAME', data: name)
   end
   ############################################################################
 
   def printStrtype
-    raise 'STRTYPE type not supported'
+    raise NotImplementedError, 'STRTYPE type not supported'
   end
   ############################################################################
 
@@ -2850,15 +2802,13 @@ end
   end
   ############################################################################
 
-  def printTapecode(*arg)
-    num = arg['-num']
+  def printTapecode (num: nil)
     raise 'printTapecode expects a number. Missing num: #.#' unless num
     printGds2Record(type: 'TAPECODE', data: num)
   end
   ############################################################################
 
-  def printTapenum(*arg)
-    num = arg['-num']
+  def printTapenum (num: nil)
     raise 'printTapenum expects a number. Missing num: #.#' unless num
     printGds2Record(type: 'TAPENUM', data: num)
   end
@@ -2875,8 +2825,7 @@ end
   #     gds2File.printTexttype( num: # );
   #
 
-  def printTexttype(*arg)
-    num = arg['-num']
+  def printTexttype (num: nil)
     raise 'printTexttype expects a number. Missing num: #' unless num
     num = 0 if num < 0
     printGds2Record(type: 'TEXTTYPE', data: num)
@@ -2884,7 +2833,7 @@ end
   ############################################################################
 
   def printUinteger
-    raise 'UINTEGER type not supported'
+    raise NotImplementedError, 'UINTEGER type not supported'
   end
   ############################################################################
 
@@ -2917,7 +2866,7 @@ end
   ############################################################################
 
   def printUstring
-    raise 'USTRING type not supported'
+    raise NotImplementedError, 'USTRING type not supported'
   end
   ############################################################################
 
@@ -2995,8 +2944,7 @@ end
 
   def returnBgnextn
     ## 2 byte signed integer
-    if isBgnextn @RecordData[0]
-    else 0; end
+    isBgnextn ? @RecordData[0] : 0
   end
   ############################################################################
 
@@ -3008,8 +2956,7 @@ end
 
   def returnDatatype
     ## 2 byte signed integer
-    if isDatatype @RecordData[0]
-    else UNKNOWN; end
+    isDatatype ? @RecordData[0] : UNKNOWN
   end
   ############################################################################
 
@@ -3020,8 +2967,7 @@ end
 
   def returnEndextn
     ## 2 byte signed integer
-    if isEndextn @RecordData[0]
-    else 0; end
+    isEndextn ? @RecordData[0] : 0
   end
   ############################################################################
 
@@ -3033,8 +2979,7 @@ end
 
   def returnLayer
     ## 2 byte signed integer
-    if isLayer @RecordData[0]
-    else UNKNOWN; end
+    isLayer ? @RecordData[0] : UNKNOWN
   end
   ############################################################################
 
@@ -3045,8 +2990,7 @@ end
 
   def returnPathtype
     ## 2 byte signed integer
-    return @RecordData[0] if isPathtype
-    UNKNOWN
+    isPathtype ? @RecordData[0] : UNKNOWN
   end
   ############################################################################
 
@@ -3057,8 +3001,7 @@ end
 
   def returnPropattr
     ## 2 byte signed integer
-    return @RecordData[0] if isPropattr
-    UNKNOWN
+    isPropattr ? @RecordData[0] : UNKNOWN
   end
   ############################################################################
 
@@ -3068,82 +3011,63 @@ end
   #
 
   def returnPropvalue
-    return @RecordData[0] if isPropvalue
-    ''
+    isPropvalue ? @RecordData[0] : ''
   end
   ############################################################################
-
   # == returnSname - return string if record type is SNAME else ''
   #
-
   def returnSname
-    if isSname
-      @RecordData[0]
-    else ''; end
+    isSname ? @RecordData[0] : ''
   end
-  ############################################################################
 
+  ############################################################################
   # == returnString - return string if record type is STRING else ''
   #
-
   def returnString
-    if isString
-      @RecordData[0]
-    else ''; end
+    isString ? @RecordData[0] : ''
   end
-  ############################################################################
 
+  ############################################################################
   # == returnStrname - return string if record type is STRNAME else ''
   #
-
   def returnStrname
-    if isStrname
-      @RecordData[0]
-    else ''; end
+    isStrname ? @RecordData[0] : ''
   end
-  ############################################################################
 
+  ############################################################################
   # == returnTexttype - returns texttype # if record is TEXTTYPE else returns -1
   #
   #   usage:
   #     $TextTypesFound[gds2File.returnTexttype] = 1;
   #
-
   def returnTexttype
     ## 2 byte signed integer
-    if isTexttype
-      @RecordData[0]
-    else UNKNOWN; end
+    isTexttype ? @RecordData[0] : UNKNOWN
   end
-  ############################################################################
 
+  ############################################################################
   # == returnWidth - returns width # if record is WIDTH else returns -1
   #
   #   usage:
   #
-
   def returnWidth
     ## 4 byte signed integer
-    if isWidth
-      @RecordData[0]
-    else UNKNOWN; end
+    isWidth ? @RecordData[0] : UNKNOWN
   end
-  ############################################################################
 
   ############################################################################
-
+  ############################################################################
   # = Low Level Specific Boolean Methods
   #
-
   ############################################################################
 
-  # == isAref - return 0 or 1 depending on whether current record is an aref
+  # == isAref - true or false depending on whether current record is an aref
   def isAref
     @RecordType == AREF
   end
   ############################################################################
 
-  # == isBgnlib - return 0 or 1 depending on whether current record is a bgnlib
+  # == isBgnlib - true or false depending on whether current record is a bgnlib
   #
 
   def isBgnlib
@@ -3151,7 +3075,7 @@ end
   end
   ############################################################################
 
-  # == isBgnstr - return 0 or 1 depending on whether current record is a bgnstr
+  # == isBgnstr - true or false depending on whether current record is a bgnstr
   #
 
   def isBgnstr
@@ -3159,7 +3083,7 @@ end
   end
   ############################################################################
 
-  # == isBoundary - return 0 or 1 depending on whether current record is a boundary
+  # == isBoundary - true or false depending on whether current record is a boundary
   #
 
   def isBoundary
@@ -3167,7 +3091,7 @@ end
   end
   ############################################################################
 
-  # == isDatatype - return 0 or 1 depending on whether current record is datatype
+  # == isDatatype - true or false depending on whether current record is datatype
   #
 
   def isDatatype
@@ -3175,7 +3099,7 @@ end
   end
   ############################################################################
 
-  # == isEndlib - return 0 or 1 depending on whether current record is endlib
+  # == isEndlib - true or false depending on whether current record is endlib
   #
 
   def isEndlib
@@ -3183,7 +3107,7 @@ end
   end
   ############################################################################
 
-  # == isEndel - return 0 or 1 depending on whether current record is endel
+  # == isEndel - true or false depending on whether current record is endel
   #
 
   def isEndel
@@ -3191,7 +3115,7 @@ end
   end
   ############################################################################
 
-  # == isEndstr - return 0 or 1 depending on whether current record is endstr
+  # == isEndstr - true or false depending on whether current record is endstr
   #
 
   def isEndstr
@@ -3199,7 +3123,7 @@ end
   end
   ############################################################################
 
-  # == isHeader - return 0 or 1 depending on whether current record is a header
+  # == isHeader - true or false depending on whether current record is a header
   #
 
   def isHeader
@@ -3207,7 +3131,7 @@ end
   end
   ############################################################################
 
-  # == isLibname - return 0 or 1 depending on whether current record is a libname
+  # == isLibname - true or false depending on whether current record is a libname
   #
 
   def isLibname
@@ -3215,7 +3139,7 @@ end
   end
   ############################################################################
 
-  # == isPath - return 0 or 1 depending on whether current record is a path
+  # == isPath - true or false depending on whether current record is a path
   #
 
   def isPath
@@ -3223,7 +3147,7 @@ end
   end
   ############################################################################
 
-  # == isSref - return 0 or 1 depending on whether current record is an sref
+  # == isSref - true or false depending on whether current record is an sref
   #
 
   def isSref
@@ -3231,7 +3155,7 @@ end
   end
   ############################################################################
 
-  # == isSrfname - return 0 or 1 depending on whether current record is an srfname
+  # == isSrfname - true or false depending on whether current record is an srfname
   #
 
   def isSrfname
@@ -3239,7 +3163,7 @@ end
   end
   ############################################################################
 
-  # == isText - return 0 or 1 depending on whether current record is a text
+  # == isText - true or false depending on whether current record is a text
   #
 
   def isText
@@ -3247,7 +3171,7 @@ end
   end
   ############################################################################
 
-  # == isUnits - return 0 or 1 depending on whether current record is units
+  # == isUnits - true or false depending on whether current record is units
   #
 
   def isUnits
@@ -3255,7 +3179,7 @@ end
   end
   ############################################################################
 
-  # == isLayer - return 0 or 1 depending on whether current record is layer
+  # == isLayer - true or false depending on whether current record is layer
   #
 
   def isLayer
@@ -3263,7 +3187,7 @@ end
   end
   ############################################################################
 
-  # == isStrname - return 0 or 1 depending on whether current record is strname
+  # == isStrname - true or false depending on whether current record is strname
   #
 
   def isStrname
@@ -3271,7 +3195,7 @@ end
   end
   ############################################################################
 
-  # == isWidth - return 0 or 1 depending on whether current record is width
+  # == isWidth - true or false depending on whether current record is width
   #
 
   def isWidth
@@ -3279,7 +3203,7 @@ end
   end
   ############################################################################
 
-  # == isXy - return 0 or 1 depending on whether current record is xy
+  # == isXy - true or false depending on whether current record is xy
   #
 
   def isXy
@@ -3287,7 +3211,7 @@ end
   end
   ############################################################################
 
-  # == isSname - return 0 or 1 depending on whether current record is sname
+  # == isSname - true or false depending on whether current record is sname
   #
 
   def isSname
@@ -3295,7 +3219,7 @@ end
   end
   ############################################################################
 
-  # == isColrow - return 0 or 1 depending on whether current record is colrow
+  # == isColrow - true or false depending on whether current record is colrow
   #
 
   def isColrow
@@ -3303,7 +3227,7 @@ end
   end
   ############################################################################
 
-  # == isTextnode - return 0 or 1 depending on whether current record is a textnode
+  # == isTextnode - true or false depending on whether current record is a textnode
   #
 
   def isTextnode
@@ -3311,7 +3235,7 @@ end
   end
   ############################################################################
 
-  # == isNode - return 0 or 1 depending on whether current record is a node
+  # == isNode - true or false depending on whether current record is a node
   #
 
   def isNode
@@ -3319,7 +3243,7 @@ end
   end
   ############################################################################
 
-  # == isTexttype - return 0 or 1 depending on whether current record is a texttype
+  # == isTexttype - true or false depending on whether current record is a texttype
   #
 
   def isTexttype
@@ -3327,7 +3251,7 @@ end
   end
   ############################################################################
 
-  # == isPresentation - return 0 or 1 depending on whether current record is a presentation
+  # == isPresentation - true or false depending on whether current record is a presentation
   #
 
   def isPresentation
@@ -3335,7 +3259,7 @@ end
   end
   ############################################################################
 
-  # == isSpacing - return 0 or 1 depending on whether current record is a spacing
+  # == isSpacing - true or false depending on whether current record is a spacing
   #
 
   def isSpacing
@@ -3343,7 +3267,7 @@ end
   end
   ############################################################################
 
-  # == isString - return 0 or 1 depending on whether current record is a string
+  # == isString - true or false depending on whether current record is a string
   #
 
   def isString
@@ -3351,7 +3275,7 @@ end
   end
   ############################################################################
 
-  # == isStrans - return 0 or 1 depending on whether current record is a strans
+  # == isStrans - true or false depending on whether current record is a strans
   #
 
   def isStrans
@@ -3359,7 +3283,7 @@ end
   end
   ############################################################################
 
-  # == isMag - return 0 or 1 depending on whether current record is a mag
+  # == isMag - true or false depending on whether current record is a mag
   #
 
   def isMag
@@ -3367,7 +3291,7 @@ end
   end
   ############################################################################
 
-  # == isAngle - return 0 or 1 depending on whether current record is a angle
+  # == isAngle - true or false depending on whether current record is a angle
   #
 
   def isAngle
@@ -3375,7 +3299,7 @@ end
   end
   ############################################################################
 
-  # == isUinteger - return 0 or 1 depending on whether current record is a uinteger
+  # == isUinteger - true or false depending on whether current record is a uinteger
   #
 
   def isUinteger
@@ -3383,7 +3307,7 @@ end
   end
   ############################################################################
 
-  # == isUstring - return 0 or 1 depending on whether current record is a ustring
+  # == isUstring - true or false depending on whether current record is a ustring
   #
 
   def isUstring
@@ -3391,7 +3315,7 @@ end
   end
   ############################################################################
 
-  # == isReflibs - return 0 or 1 depending on whether current record is a reflibs
+  # == isReflibs - true or false depending on whether current record is a reflibs
   #
 
   def isReflibs
@@ -3399,7 +3323,7 @@ end
   end
   ############################################################################
 
-  # == isFonts - return 0 or 1 depending on whether current record is a fonts
+  # == isFonts - true or false depending on whether current record is a fonts
   #
 
   def isFonts
@@ -3407,7 +3331,7 @@ end
   end
   ############################################################################
 
-  # == isPathtype - return 0 or 1 depending on whether current record is a pathtype
+  # == isPathtype - true or false depending on whether current record is a pathtype
   #
 
   def isPathtype
@@ -3415,7 +3339,7 @@ end
   end
   ############################################################################
 
-  # == isGenerations - return 0 or 1 depending on whether current record is a generations
+  # == isGenerations - true or false depending on whether current record is a generations
   #
 
   def isGenerations
@@ -3423,7 +3347,7 @@ end
   end
   ############################################################################
 
-  # == isAttrtable - return 0 or 1 depending on whether current record is a attrtable
+  # == isAttrtable - true or false depending on whether current record is a attrtable
   #
 
   def isAttrtable
@@ -3431,7 +3355,7 @@ end
   end
   ############################################################################
 
-  # == isStyptable - return 0 or 1 depending on whether current record is a styptable
+  # == isStyptable - true or false depending on whether current record is a styptable
   #
 
   def isStyptable
@@ -3439,7 +3363,7 @@ end
   end
   ############################################################################
 
-  # == isStrtype - return 0 or 1 depending on whether current record is a strtype
+  # == isStrtype - true or false depending on whether current record is a strtype
   #
 
   def isStrtype
@@ -3447,7 +3371,7 @@ end
   end
   ############################################################################
 
-  # == isEflags - return 0 or 1 depending on whether current record is a eflags
+  # == isEflags - true or false depending on whether current record is a eflags
   #
 
   def isEflags
@@ -3455,7 +3379,7 @@ end
   end
   ############################################################################
 
-  # == isElkey - return 0 or 1 depending on whether current record is a elkey
+  # == isElkey - true or false depending on whether current record is a elkey
   #
 
   def isElkey
@@ -3463,7 +3387,7 @@ end
   end
   ############################################################################
 
-  # == isLinktype - return 0 or 1 depending on whether current record is a linktype
+  # == isLinktype - true or false depending on whether current record is a linktype
   #
 
   def isLinktype
@@ -3471,7 +3395,7 @@ end
   end
   ############################################################################
 
-  # == isLinkkeys - return 0 or 1 depending on whether current record is a linkkeys
+  # == isLinkkeys - true or false depending on whether current record is a linkkeys
   #
 
   def isLinkkeys
@@ -3479,7 +3403,7 @@ end
   end
   ############################################################################
 
-  # == isNodetype - return 0 or 1 depending on whether current record is a nodetype
+  # == isNodetype - true or false depending on whether current record is a nodetype
   #
 
   def isNodetype
@@ -3487,7 +3411,7 @@ end
   end
   ############################################################################
 
-  # == isPropattr - return 0 or 1 depending on whether current record is a propattr
+  # == isPropattr - true or false depending on whether current record is a propattr
   #
 
   def isPropattr
@@ -3495,7 +3419,7 @@ end
   end
   ############################################################################
 
-  # == isPropvalue - return 0 or 1 depending on whether current record is a propvalue
+  # == isPropvalue - true or false depending on whether current record is a propvalue
   #
 
   def isPropvalue
@@ -3503,7 +3427,7 @@ end
   end
   ############################################################################
 
-  # == isBox - return 0 or 1 depending on whether current record is a box
+  # == isBox - true or false depending on whether current record is a box
   #
 
   def isBox
@@ -3511,7 +3435,7 @@ end
   end
   ############################################################################
 
-  # == isBoxtype - return 0 or 1 depending on whether current record is a boxtype
+  # == isBoxtype - true or false depending on whether current record is a boxtype
   #
 
   def isBoxtype
@@ -3519,7 +3443,7 @@ end
   end
   ############################################################################
 
-  # == isPlex - return 0 or 1 depending on whether current record is a plex
+  # == isPlex - true or false depending on whether current record is a plex
   #
 
   def isPlex
@@ -3527,7 +3451,7 @@ end
   end
   ############################################################################
 
-  # == isBgnextn - return 0 or 1 depending on whether current record is a bgnextn
+  # == isBgnextn - true or false depending on whether current record is a bgnextn
   #
 
   def isBgnextn
@@ -3535,7 +3459,7 @@ end
   end
   ############################################################################
 
-  # == isEndextn - return 0 or 1 depending on whether current record is a endextn
+  # == isEndextn - true or false depending on whether current record is a endextn
   #
 
   def isEndextn
@@ -3543,7 +3467,7 @@ end
   end
   ############################################################################
 
-  # == isTapenum - return 0 or 1 depending on whether current record is a tapenum
+  # == isTapenum - true or false depending on whether current record is a tapenum
   #
 
   def isTapenum
@@ -3551,7 +3475,7 @@ end
   end
   ############################################################################
 
-  # == isTapecode - return 0 or 1 depending on whether current record is a tapecode
+  # == isTapecode - true or false depending on whether current record is a tapecode
   #
 
   def isTapecode
@@ -3559,7 +3483,7 @@ end
   end
   ############################################################################
 
-  # == isStrclass - return 0 or 1 depending on whether current record is a strclass
+  # == isStrclass - true or false depending on whether current record is a strclass
   #
 
   def isStrclass
@@ -3567,7 +3491,7 @@ end
   end
   ############################################################################
 
-  # == isReserved - return 0 or 1 depending on whether current record is a reserved
+  # == isReserved - true or false depending on whether current record is a reserved
   #
 
   def isReserved
@@ -3575,7 +3499,7 @@ end
   end
   ############################################################################
 
-  # == isFormat - return 0 or 1 depending on whether current record is a format
+  # == isFormat - true or false depending on whether current record is a format
   #
 
   def isFormat
@@ -3583,7 +3507,7 @@ end
   end
   ############################################################################
 
-  # == isMask - return 0 or 1 depending on whether current record is a mask
+  # == isMask - true or false depending on whether current record is a mask
   #
 
   def isMask
@@ -3591,7 +3515,7 @@ end
   end
   ############################################################################
 
-  # == isEndmasks - return 0 or 1 depending on whether current record is a endmasks
+  # == isEndmasks - true or false depending on whether current record is a endmasks
   #
 
   def isEndmasks
@@ -3599,7 +3523,7 @@ end
   end
   ############################################################################
 
-  # == isLibdirsize - return 0 or 1 depending on whether current record is a libdirsize
+  # == isLibdirsize - true or false depending on whether current record is a libdirsize
   #
 
   def isLibdirsize
@@ -3607,7 +3531,7 @@ end
   end
   ############################################################################
 
-  # == isLibsecur - return 0 or 1 depending on whether current record is a libsecur
+  # == isLibsecur - true or false depending on whether current record is a libsecur
   #
 
   def isLibsecur
@@ -3644,7 +3568,7 @@ end
     ## 4 should have been just read by readGds2RecordHeader
     @FileHandle.seek(@Length - 4, SEEK_CUR); ## seek seems to run a little faster than read
     @DataIndex = UNKNOWN
-    1
+    true
   end
   ############################################################################
 
