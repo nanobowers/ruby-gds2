@@ -1,0 +1,5 @@
+# gitignore
+*~
+*.gds
+*.gds2
+
