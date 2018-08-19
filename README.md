@@ -6,12 +6,12 @@ This Ruby port of the GDS2 Perl module is mostly untested and incomplete.
 The API will change and I plan to heavy modify the interface.
 
 # Todo list:
-[x] : rough port of Perl codebase to Ruby
-[ ] : port unit-tests and add additional tests (rspec)
-[ ] : get gds2 write/read working with known testcases
-[ ] : refactor code to remove duplication
-[ ] : refactor code to reduce all of the large methods
-[ ] : performance improvements
++ [x] : rough port of Perl codebase to Ruby
++ [ ] : port unit-tests and add additional tests (rspec)
++ [ ] : get gds2 write/read working with known testcases
++ [ ] : refactor code to remove duplication
++ [ ] : refactor code to reduce all of the large methods
++ [ ] : performance improvements
 
 //nanobowers
 
