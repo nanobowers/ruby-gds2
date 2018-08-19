@@ -1,3 +1,5 @@
+require 'pp'
+
 class GDS2
   VERSION = '3.35'
   ## Note: '@ ( # )' used by the what command  E.g. what GDS2.pm
@@ -14,15 +16,14 @@ class GDS2
   #
   # = COPYRIGHT
   #
-  # Author: Ken Schumack (c) 1999-2017. All rights reserved.
+  # Authors:
+  #
+  # Ben Bowers (c) 2018
+  # Ken Schumack (c) 1999-2017 (Original perl version)
+  # All rights reserved.
+  #
   # This module is free software. It may be used, redistributed
-  # and/or modified under the terms of the Perl Artistic License.
-  # ( see http://www.perl.com/pub/a/language/misc/Artistic.html )
-  #  Have fun, Ken
-  #
-  # Schumack@cpan.org
-  #
-  # Ruby Port by Ben Bowers (nanobowers at gmail dot com)
+  # and/or modified under the terms of the BSD 2-clause License.
   #
   # = DESCRIPTION
   #
@@ -42,10 +43,6 @@ class GDS2
   # parameterized gds2 data with perl. -Years later Andreas Pawlak
   # pointed out a endian problem that needed to be addressed.
   #
-  # BEGIN {
-
-  # true    = 1
-  # false   = 0
   UNKNOWN = -1
 
   HAVE_FLOCK = true ## some systems still may not have this...manually change
@@ -64,21 +61,32 @@ class GDS2
 
   ############################################################################
   ## GDS2 STREAM RECORD DATATYPES
+  ############################################################################
   NO_REC_DATA  = 0
   BIT_ARRAY    = 1
   INTEGER_2    = 2
   INTEGER_4    = 3
-  REAL_4       = 4 # NOT supported, should not be found in any GDS2
+  # REAL_4 is NOT supported, should not be found in any GDS2
+  REAL_4       = 4
   REAL_8       = 5
   ASCII_STRING = 6
   ############################################################################
 
   ############################################################################
   ## GDS2 STREAM RECORD TYPES
-  HEADER       =  0;   ## 2-byte Signed Integer
-  BGNLIB       =  1;   ## 2-byte Signed Integer
-  LIBNAME      =  2;   ## ASCII String
-  UNITS        =  3;   ## 8-byte Real
+  ############################################################################
+
+  ## 2-byte Signed Integer
+  HEADER       =  0;   
+
+  ## 2-byte Signed Integer
+  BGNLIB       =  1;   
+
+  ## ASCII String
+  LIBNAME      =  2;   
+
+  ## 8-byte Real
+  UNITS        =  3;   
   ENDLIB       =  4;   ## no data present
   BGNSTR       =  5;   ## 2-byte Signed Integer
   STRNAME      =  6;   ## ASCII String
@@ -113,38 +121,82 @@ class GDS2
   ATTRTABLE    = 35;   ## ASCII String
   STYPTABLE    = 36;   ## ASCII String "Unreleased feature"
   STRTYPE      = 37;   ## 2-byte Signed Integer "Unreleased feature"
-  EFLAGS       = 38;   ## BIT_ARRAY  Flags for template and exterior data.  bits 15 to 0, l to r 0=template,
-  ##   1=external data, others unused
-  ELKEY        = 39;   ## INTEGER_4  "Unreleased feature"
-  LINKTYPE     = 40;   ## UNKNOWN    "Unreleased feature"
-  LINKKEYS     = 41;   ## UNKNOWN    "Unreleased feature"
-  NODETYPE     = 42;   ## INTEGER_2  Nodetype specification. On Calma this could be 0 to 63, GDSII allows 0 to 255.
+
+  # BIT_ARRAY  Flags for template and exterior data.  bits 15 to 0, l to r 0=template,
+  # 1=external data, others unused
+  EFLAGS       = 38;   
+  
+  ## INTEGER_4  "Unreleased feature"
+  ELKEY        = 39;   
+
+  ## UNKNOWN    "Unreleased feature"
+  LINKTYPE     = 40;   
+
+  ## UNKNOWN    "Unreleased feature"
+  LINKKEYS     = 41;   
+
+  ## INTEGER_2  Nodetype specification. On Calma this could be 0 to 63, GDSII allows 0 to 255.
   ##   Of course a 2 byte integer allows up to 65535...
-  PROPATTR     = 43;   ## INTEGER_2  Property number.
-  PROPVALUE    = 44;   ## STRING     Property value. On GDSII, 128 characters max, unless an SREF, AREF, or NODE,
-  ##   which may have 512 characters.
-  BOX          = 45;   ## NO_DATA    The beginning of a BOX element.
-  BOXTYPE      = 46;   ## INTEGER_2  Boxtype specification.
-  PLEX         = 47;   ## INTEGER_4  Plex number and plexhead flag. The least significant bit of the most significant
+  NODETYPE     = 42;   
+
+  ## INTEGER_2  Property number.
+  PROPATTR     = 43;   
+
+  ## STRING     Property value. On GDSII, 128 characters max, unless an SREF, AREF, or NODE,
+  ## which may have 512 characters.
+  PROPVALUE    = 44;   
+
+  ## NO_DATA    The beginning of a BOX element.
+  BOX          = 45;   
+
+  ## INTEGER_2  Boxtype specification.
+  BOXTYPE      = 46;   
+
+  ## INTEGER_4  Plex number and plexhead flag. The least significant bit of the most significant
   ##    byte is the plexhead flag.
-  BGNEXTN      = 48; ## INTEGER_4  Path extension beginning for pathtype 4 in Calma CustomPlus. In database units,
+  PLEX         = 47;
+
+  ## INTEGER_4  Path extension beginning for pathtype 4 in Calma CustomPlus. In database units,
   ##    may be negative.
-  ENDEXTN      = 49;   ## INTEGER_4  Path extension end for pathtype 4 in Calma CustomPlus. In database units, may be negative.
-  TAPENUM      = 50;   ## INTEGER_2  Tape number for multi-reel stream file.
-  TAPECODE     = 51;   ## INTEGER_2  Tape code to verify that the reel is from the proper set. 12 bytes that are
-  ##   supposed to form a unique tape code.
-  STRCLASS     = 52;   ## BIT_ARRAY  Calma use only.
-  RESERVED     = 53;   ## INTEGER_4  Used to be NUMTYPES per Calma GDSII Stream Format Manual, v6.0.
-  FORMAT       = 54;   ## INTEGER_2  Archive or Filtered flag.  0: Archive 1: filtered
-  MASK         = 55;   ## STRING     Only in filtered streams. Layers and datatypes used for mask in a filtered
+  BGNEXTN      = 48;
+
+  ## INTEGER_4  Path extension end for pathtype 4 in Calma CustomPlus. In database units, may be negative.
+  ENDEXTN      = 49;   
+
+  ## INTEGER_2  Tape number for multi-reel stream file.
+  TAPENUM      = 50;   
+
+  ## INTEGER_2  Tape code to verify that the reel is from the proper set. 12 bytes that are
+  ## supposed to form a unique tape code.
+  TAPECODE     = 51;   
+
+  ## BIT_ARRAY  Calma use only.
+  STRCLASS     = 52;   
+
+  ## INTEGER_4  Used to be NUMTYPES per Calma GDSII Stream Format Manual, v6.0.
+  RESERVED     = 53;   
+
+  ## INTEGER_2  Archive or Filtered flag.  0: Archive 1: filtered
+  FORMAT       = 54;   
+
+  ## STRING     Only in filtered streams. Layers and datatypes used for mask in a filtered
   ##   stream file. A string giving ranges of layers and datatypes separated by a semicolon.
   ##   There may be more than one mask in a stream file.
-  ENDMASKS     = 56;   ## NO_DATA    The end of mask descriptions.
-  LIBDIRSIZE   = 57;   ## INTEGER_2  Number of pages in library director, a GDSII thing, it seems to have only been
+  MASK         = 55;   
+
+  ## NO_DATA    The end of mask descriptions.
+  ENDMASKS     = 56;   
+
+  ## INTEGER_2  Number of pages in library director, a GDSII thing, it seems to have only been
   ##   used when Calma INFORM was creating a new library.
-  SRFNAME      = 58;   ## STRING     Calma "Sticks"(c) rule file name.
-  LIBSECUR     = 59;   ## INTEGER_2  Access control list stuff for CalmaDOS, ancient. INFORM used this when creating
+  LIBDIRSIZE   = 57;
+
+  ## STRING     Calma "Sticks"(c) rule file name.
+  SRFNAME      = 58;
+
+  ## INTEGER_2  Access control list stuff for CalmaDOS, ancient. INFORM used this when creating
   ##   a new library. Had 1 to 32 entries with group numbers, user numbers and access rights.
+  LIBSECUR     = 59;
   #############################################################################################
 
   RECORDTYPENUMBERS = {
@@ -210,7 +262,8 @@ class GDS2
     'LIBSECUR'    => LIBSECUR
   }.freeze
 
-  RECORDTYPESTRINGS = [ ## for ascii print of GDS
+  # For ascii print of GDS
+  RECORDTYPESTRINGS = [ 
     'HEADER',
     'BGNLIB',
     'LIBNAME',
@@ -272,7 +325,9 @@ class GDS2
     'SRFNAME',
     'LIBSECUR'
   ].freeze
-  COMPACTRECORDTYPESTRINGS = [ ## for compact ascii print of GDS (GDT format) see http://sourceforge.net/projects/gds2/
+
+  # For compact ascii print of GDS (GDT format) see http://sourceforge.net/projects/gds2/
+  COMPACTRECORDTYPESTRINGS = [ 
     'gds2{',          # HEADER
     '',               # BGNLIB
     'lib',            # LIBNAME
@@ -336,6 +391,7 @@ class GDS2
   ].freeze
 
   ###################################################
+  # Hash of record-type to the data-type
   RECORDTYPEDATA = {
     'HEADER'       => INTEGER_2,
     'BGNLIB'       => INTEGER_2,
@@ -433,8 +489,7 @@ class GDS2
   #     here's a bare bones script to change all layer 59 to 66 given a file to
   #     read and a new file to create.
   #     #!/usr/bin/perl -w
-  #     use strict;
-  #     use GDS2;
+  #     require 'gds2'
   #     $fileName1 = $ARGV[0];
   #     $fileName2 = $ARGV[1];
   #     gds2File1 = new GDS2(-fileName => $fileName1);
@@ -451,7 +506,7 @@ class GDS2
   #   Gds2 dump:
   #     here's a complete program to dump the contents of a stream file.
   #     #!/usr/bin/perl -w
-  #     use GDS2;
+  #     require 'gds2'
   #     $\="\n";
   #     gds2File = new GDS2(-fileName=>$ARGV[0]);
   #     while (gds2File.readGds2Record)
@@ -462,7 +517,7 @@ class GDS2
   #
   #   Gds2 dump in GDT format: which is smaller and easier to parse - http://sourceforge.net/projects/gds2/
   #     #!/usr/bin/perl -w
-  #     use GDS2;
+  #     require 'gds2'
   #     gds2File = new GDS2(-fileName=>$ARGV[0]);
   #     while (gds2File.readGds2Record)
   #     {
@@ -474,7 +529,7 @@ class GDS2
   #
   #   Create a complete GDS2 stream file from scratch:
   #     #!/usr/bin/perl -w
-  #     use GDS2;
+  #     require 'gds2'
   #     gds2File = new GDS2(-fileName=>'>test.gds');
   #     gds2File.printInitLib(-name=>'testlib');
   #     gds2File.printBgnstr(-name=>'test');
@@ -510,12 +565,12 @@ class GDS2
   # == new - open gds2 file
   #
   #   usage:
-  #   gds2File  = GDS2.new(-fileName => "filename.gds2"); ## to read
-  #   gds2File2 = GDS2.new(-fileName => ">filename.gds2"); ## to write
+  #   gds2File  = GDS2.new(fileName: "filename.gds2"); ## to read
+  #   gds2File2 = GDS2.new(fileName: ">filename.gds2"); ## to write
   #
   #   -or- provide your own fileHandle:
   #
-  #   gds2File  = new GDS2(-fileHandle => $fh); ## e.g. to attach to a compression/decompression pipe
+  #   gds2File  = GDS2.new(fileHandle: $fh); ## e.g. to attach to a compression/decompression pipe
   #
 
   def initialize(fileName: nil, fileHandle: nil, resolution: 1000, mode: 'r')
@@ -544,7 +599,7 @@ class GDS2
       end
     end
     raise "new expects a positive integer resolution. (#{resolution})" if resolution.to_i <= 0
-    # binmode fileHandle, ':raw'
+
     @Fd         = fileHandle.fileno
     @FileHandle = fileHandle
     @FileName   = fileName; ## the gds2 filename
@@ -566,10 +621,18 @@ class GDS2
     @DateFld    = 0; ##
     @Resolution = resolution
     @UsingPrettyPrint = false; ## print as string ...
-    self
   end
   ############################################################################
   ############################################################################
+  # common integer resolution snapping function
+  ## e.g. 3.4 in -> 3400 out
+  def snap_int (num)
+    if num >= 0
+      ((num * @Resolution) + GDS2::g_epsilon).to_i
+    else
+      ((num * @Resolution) - GDS2::g_epsilon).to_i
+    end
+  end
 
   #######
   # private method to clean up number
@@ -586,7 +649,7 @@ class GDS2
     num = format("%0.#{GDS2.g_fltlen}f", inum)
     num.sub!(/([1-9])0+$/, "\\1")
     num.sub!(/(\d)\.0+$/, "\\1")
-    num
+    num.to_f
   end
 
   ############################################################################
@@ -632,10 +695,7 @@ class GDS2
   ############################################################################
 
   ############################################################################
-
-  # = High Level Write Methods
-  #
-
+  # High Level Write Methods
   ############################################################################
 
   # == printInitLib() - Does all the things needed to start a library, writes HEADER,BGNLIB,LIBNAME,
@@ -672,7 +732,7 @@ class GDS2
     #################################################
 
     t = Time.now
-    isoadjust = isoDate ?  1900 : 0  ## Cadence likes year left "as is". GDS format supports year number up to 65535 -- 101 vs 2001
+    isoadjust = isoDate ? 1900 : 0  ## Cadence likes year left "as is". GDS format supports year number up to 65535 -- 101 vs 2001
     printGds2Record(type: 'HEADER', data: 3); ## GDS2 HEADER
     printGds2Record(type: 'BGNLIB', data: [t.year + isoadjust, t.mon, t.mday, t.hour, t.min, t.sec,
                                            t.year + isoadjust, t.mon, t.mday, t.hour, t.min, t.sec])
@@ -742,8 +802,8 @@ class GDS2
     end
     width = widthi
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    #xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
-    #xy = arg['-xy'];       ## $xy should be a reference to an array of reals
+    ## $xyInt should be a reference to an array of internal GDS2 format integers
+    ## $xy should be a reference to an array of reals
     xyTmp = []; # #don't pollute array passed in
     unless xy || xyInt
       raise "printPath expects an xy array reference. Missing xy: Array"
@@ -764,12 +824,7 @@ class GDS2
 
     xy.each do |xyi|
       ## e.g. 3.4 in.3400 out
-      xyTmp <<
-        if xyi >= 0
-          ((xyi * resolution) + GDS2::g_epsilon).to_i
-        else
-          ((xyi * resolution) - GDS2::g_epsilon).to_i
-        end
+      xyTmp << snap_int(xyi)
     end
 
     if bgnExtn || endExtn  ## we have to convert
@@ -819,12 +874,12 @@ class GDS2
           if endY1 < endY2 ## points down
 
             xyTmp[xyTmp.length] -= endExtn
-            xyTmp[xyTmp.length] += int(width / 2) if pathType != 0
+            xyTmp[xyTmp.length] += (width / 2).to_i if pathType != 0
 
           else ## points up
 
             xyTmp[xyTmp.length] += endExtn
-            xyTmp[xyTmp.length] -= int(width / 2) if pathType != 0
+            xyTmp[xyTmp.length] -= (width / 2).to_i if pathType != 0
           end
 
         elsif endY1 == endY2 # horizontal ...modify last X
@@ -832,12 +887,12 @@ class GDS2
           if endX1 < endX2 ## points left
 
             xyTmp[xyTmp.length - 1] -= endExtn
-            xyTmp[xyTmp.length - 1] += int(width / 2) if pathType != 0
+            xyTmp[xyTmp.length - 1] += (width / 2).to_i if pathType != 0
 
           else ## points up
 
             xyTmp[xyTmp.length - 1] += endExtn
-            xyTmp[xyTmp.length - 1] -= int(width / 2) if pathType != 0
+            xyTmp[xyTmp.length - 1] -= (width / 2).to_i if pathType != 0
           end
         end
       end
@@ -888,26 +943,12 @@ class GDS2
     end
     xy.each do |xyi|
       ## e.g. 3.4 in -> 3400 out
-
-      if xyi >= 0
-        xyTmp.push ((xyi * resolution) + GDS2::g_epsilon).to_i
-      else
-        xyTmp.push ((xyi * resolution) - GDS2::g_epsilon).to_i
-      end
+      xyTmp << snap_int(xyi)
     end
     ## gds expects square to have 5 coords (closure)
     if (xy[0] != (xy[(xy.length - 1)])) || (xy[1] != (xy[xy.length]))
-
-      if xy[0] >= 0
-        xyTmp.push (((xy[0]) * resolution) + GDS2::g_epsilon).to_i
-      else
-        xyTmp.push (((xy[0]) * resolution) - GDS2::g_epsilon).to_i
-      end
-      if xy[1] >= 0
-        xyTmp.push (((xy[1]) * resolution) + GDS2::g_epsilon).to_i
-      else
-        xyTmp.push (((xy[1]) * resolution) - GDS2::g_epsilon).to_i
-      end
+      xyTmp << snap_int(xy[0])
+      xyTmp << snap_int(xy[1])
     end
     printGds2Record(type: 'XY', data: xyTmp)
     printGds2Record(type: 'ENDEL')
@@ -941,8 +982,8 @@ class GDS2
     resolution = @Resolution
     raise "printSref expects a name string. Missing name: 'text'" unless name
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    #xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
-    #xy = arg['-xy']; ## $xy should be a reference to an array of reals
+    ## $xyInt should be a reference to an array of internal GDS2 format integers
+    ## $xy should be a reference to an array of reals
     unless  xy || xyInt
       raise "printSref expects an xy array reference. Missing xy: Array"
     end
@@ -952,7 +993,6 @@ class GDS2
     end
     printGds2Record(type: 'SREF')
     printGds2Record(type: 'SNAME', data: name)
-    #reflect = arg['-reflect']
     if !reflect || (reflect <= 0)
       reflect = 0
     else
@@ -961,7 +1001,7 @@ class GDS2
       useSTRANS = true
     end
 
-    if  !mag || (mag <= 0)
+    if !mag || (mag <= 0)
       mag = 0
     else
       mag = cleanFloatNum(mag)
@@ -978,18 +1018,12 @@ class GDS2
     if useSTRANS
       data = reflect.to_s + '0' * 15; ## 16 'bit' string
       printGds2Record(type: 'STRANS', data: data)
-      printGds2Record(type: 'MAG', data: mag) if  mag
+      printGds2Record(type: 'MAG', data: mag) if mag
       printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
     end
     xyTmp = []; # #don't pollute array passed in
     xy.each do |xyi| ## e.g. 3.4 in -> 3400 out
-      xyTmp.push(
-        if xyi >= 0
-          ((xyi * resolution) + GDS2::g_epsilon).to_i
-        else
-          ((xyi * resolution) - GDS2::g_epsilon).to_i
-        end
-      )
+      xyTmp << snap_int(xyi)
     end
     printGds2Record(type: 'XY', data: xyTmp)
     printGds2Record(type: 'ENDEL')
@@ -1023,7 +1057,6 @@ class GDS2
   def printAref(*arg,name: nil, columns: 1, rows: 1, xy: nil, xyInt: nil, angle: nil, mag: nil, reflect: nil)
     useSTRANS = false
     resolution = @Resolution
-    #name = arg['-name']
     raise "printAref expects a sname string. Missing name: 'text'" unless name
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
     ## $xyInt should be a reference to an array of internal GDS2 format integers
@@ -1044,40 +1077,34 @@ class GDS2
       reflect = 1
       useSTRANS = true
     end
-    #mag = arg['-mag']
-    if  !mag || (mag <= 0)
-
+    
+    if !mag || (mag <= 0)
       mag = 0
-
     else
-
       mag = cleanFloatNum(mag)
       useSTRANS = true
     end
-    #angle = arg['-angle']
+
     if !angle
-
       angle = -1; # not really... just means not specified
-
     else
-
       angle = posAngle(angle)
       useSTRANS = true
     end
-    if useSTRANS
 
+    if useSTRANS
       data = reflect.to_s + '0' * 15; ## 16 'bit' string
       printGds2Record(type: 'STRANS', data: data)
-      printGds2Record(type: 'MAG', data: mag) if  mag
+      printGds2Record(type: 'MAG', data: mag) if mag
       printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
     end
-    #columns = arg['-columns']
+
     columns = if !columns || (columns <= 0)
                 1
               else
                 columns.to_i
               end
-    #rows = arg['-rows']
+
     rows = if !rows || (rows <= 0)
              1
            else
@@ -1086,11 +1113,7 @@ class GDS2
     printGds2Record(type: 'COLROW', data: [columns, rows])
     xyTmp = []; # #don't pollute array passed in
     xy.each do |xyi| ## e.g. 3.4 in -> 3400 out
-      xyTmp << if xyi >= 0
-                 ((xyi * resolution) + GDS2::g_epsilon).to_i
-               else
-                 ((xyi * resolution) - GDS2::g_epsilon).to_i
-    end
+      xyTmp << snap_int(xyi)
     end
     printGds2Record(type: 'XY', data: xyTmp)
     printGds2Record(type: 'ENDEL')
@@ -1127,67 +1150,41 @@ class GDS2
   #  <textbody>::= TEXTTYPE [PRESENTATION] [PATHTYPE] [WIDTH] [<strans>] XY STRING
   #    <strans>::= STRANS [MAG] [ANGLE]
   ############################################################################
-  def printText(*arg, string: nil)
+def printText(string: nil, layer: 0, textType: 0, font: nil,
+              xy: nil, xyInt: nil,
+              x: nil, y: nil,
+              angle: nil, mag: nil, reflect: nil
+             )
     useSTRANS = false
     raise "printText expects a string. Missing string: 'text'" unless string
     resolution = @Resolution
-    x = arg['-x']
-    y = arg['-y']
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
-    xy = arg['-xy']; ## $xy should be a reference to an array of reals
-    if   xyInt
-
+    ## $xyInt should be a reference to an array of internal GDS2 format integers
+    ## $xy should be a reference to an array of reals
+    if xyInt
       xy = xyInt
       resolution = 1
     end
-    if xy
-
-      x = xy[0]
-      y = xy[1]
+    
+    if xy.is_a? Array
+      x ||= xy[0]
+      y ||= xy[1]
     end
+    
 
-    x2 = arg['-x']
-    x = x2 if x2
-    unless x
+    raise "printText expects a x coord. Missing -xy=>\#{array} or -x => 'num'" unless x
+    raise "printText expects a y coord. Missing -xy=>\#{array} or -y => 'num'" unless y
 
-      raise "printText expects a x coord. Missing -xy=>\#{array} or -x => 'num'"
-    end
-    x = if x >= 0
-          int((x * resolution) + GDS2::g_epsilon)
-        else
-          int((x * resolution) - GDS2::g_epsilon)
-        end
+    x = snap_int(x)
+    y = snap_int(y)
 
-    y2 = arg['-y']
-    y = y2 if y2
-    unless y
-
-      raise "printText expects a y coord. Missing -xy=>\#{array} or -y => 'num'"
-    end
-    y = if y >= 0
-          int((y * resolution) + GDS2::g_epsilon)
-        else
-          int((y * resolution) - GDS2::g_epsilon)
-        end
-
-    layer = arg['-layer']
-    layer ||= 0
-    textType = arg['-textType']
-    textType ||= 0
-    reflect = arg['-reflect']
     if !reflect || (reflect <= 0)
-
       reflect = 0
-
     else
-
       reflect = 1
       useSTRANS = true
     end
-
-    font = arg['-font']
-    font = 0 if !font || (font < 0) || (font > 3)
+    raise "Invalid font, must be in 0..3" unless (0..3).include?(font)
     font = format('%02d', font)
 
     vertical
@@ -1212,14 +1209,14 @@ class GDS2
     presString = '0' * 10
     presString += "#{font}#{vertical}#{horizontal}"
 
-    mag = arg['-mag']
+    #mag = arg['-mag']
     mag = if !mag || (mag <= 0)
             0
           else
 
             cleanFloatNum(mag)
           end
-    angle = arg['-angle']
+    #angle = arg['-angle']
     angle = if !angle
 
               -1; # not really... just means not specified
@@ -1236,7 +1233,7 @@ class GDS2
       data = reflect + '0' * 15; ## 16 'bit' string
       printGds2Record(type: 'STRANS', data: data)
     end
-    printGds2Record(type: 'MAG', data: mag) if  mag
+    printGds2Record(type: 'MAG', data: mag) if mag
     printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
     printGds2Record(type: 'XY', data: [x, y])
     printGds2Record(type: 'STRING', data: string)
@@ -1256,20 +1253,20 @@ class GDS2
   #
   #   usage:
   #     saveGds2Record(
-  #             -type=>string,
+  #             type: string,
   #             -data=>data_If_Needed, ##optional for some types
   #             -scale=>#.#,           ##optional number to scale data to. I.E -scale=>0.5 #default is NOT to scale
   #             -snap=>#.#,            ##optional number to snap data to I.E. -snap=>0.005 #default is 1 resolution unit, typically 0.001
   #     );
   #
   #   examples:
-  #     gds2File = new GDS2(-fileName => ">$fileName");
-  #     $record = gds2File.saveGds2Record(-type=>'header',-data=>3);
-  #     gds2FileOut.printGds2Record(-type=>'record',-data=>$record);
+  #     gds2File = GDS2.new(-fileName => ">$fileName");
+#     record = gds2File.saveGds2Record(type: 'header',-data=>3);
+  #     gds2FileOut.printGds2Record(type: 'record',-data=>$record);
   #
   #
 
-  def saveGds2Record(*arg)
+  def saveGds2Record(data: nil, asciiData: nil, scale: 1, snap: nil)
     record = ''
 
     if type
@@ -1281,20 +1278,17 @@ class GDS2
     saveEnd = $OUTPUT_RECORD_SEPARATOR
     $\ = ''
 
-    data = arg['-data']
     dataString = asciiData
     raise 'saveGds2Record can not handle both -data and -asciiData options' if asciiData && data
 
     data = ''
-    if  type == 'RECORD' ## special case...
+    if type == 'RECORD' ## special case...
       return data[0]
     else
 
       numDataElements = 0
       resolution = @Resolution
-
-      scale = arg['-scale']
-      scale ||= 1
+      
       if scale <= 0
 
         raise "saveGds2Record expects a positive scale -scale => #{scale}"
@@ -1344,12 +1338,8 @@ class GDS2
           if recordDataType == INTEGER_4
 
             xyTmp = []
-            (0..numDatatElements - 1).each do |i| ## e.g. 3.4 in -> 3400 out
-              xyTmp << if data[i] >= 0
-                         int(((data[i]) * resolution) + GDS2::g_epsilon)
-                       else
-                         int(((data[i]) * resolution) - GDS2::g_epsilon)
-                       end
+            (0..numDataElements - 1).each do |i|
+              xyTmp << snap_int(data[i])
             end
             data = xyTmp
           end
@@ -1360,13 +1350,13 @@ class GDS2
       length = 0
       if recordDataType == BIT_ARRAY
         length = 2
-      elsif  recordDataType == INTEGER_2
+      elsif recordDataType == INTEGER_2
         length = 2 * numDataElements
-      elsif  recordDataType == INTEGER_4
+      elsif recordDataType == INTEGER_4
         length = 4 * numDataElements
-      elsif  recordDataType == REAL_8
+      elsif recordDataType == REAL_8
         length = 8 * numDataElements
-      elsif  recordDataType == ASCII_STRING
+      elsif recordDataType == ASCII_STRING
         slen = data.length
         length = slen + (slen % 2); ## needs to be an even number
       end
@@ -1379,18 +1369,18 @@ class GDS2
       dataType = RECORDTYPEDATA[type].pack 'C'
       record += dataType
 
-      if  recordDataType == BIT_ARRAY      ## bit array
+      if recordDataType == BIT_ARRAY      ## bit array
 
         bitLength = length * 8
         record += data.pack("B#{bitLength}")
 
-      elsif  recordDataType == INTEGER_2   ## 2 byte signed integer
+      elsif recordDataType == INTEGER_2   ## 2 byte signed integer
 
         data.each do |num|
           record += [num].pack('s')
         end
 
-      elsif  recordDataType == INTEGER_4   ## 4 byte signed integer
+      elsif recordDataType == INTEGER_4   ## 4 byte signed integer
 
         data.each do |num|
           num = scaleNum(num, scale) if scale != 1
@@ -1398,7 +1388,7 @@ class GDS2
           record += pack('i', num)
         end
 
-      elsif  recordDataType == REAL_8 ## 8 byte real
+      elsif recordDataType == REAL_8 ## 8 byte real
 
         data.each do |num|
           real = num
@@ -1437,7 +1427,7 @@ class GDS2
           end
         end
 
-      elsif  recordDataType == ASCII_STRING ## ascii string (null padded)
+      elsif recordDataType == ASCII_STRING ## ascii string (null padded)
         record += data.pack("a#{length}")
       end
     end
@@ -1451,7 +1441,7 @@ class GDS2
   #
   #   usage:
   #     printGds2Record(
-  #             -type=>string,
+  #             type: string,
   #             -data=>data_If_Needed, ##optional for some types
   #             -scale=>#.#,           ##optional number to scale data to. I.E -scale=>0.5 #default is NOT to scale
   #             -snap=>#.#,            ##optional number to snap data to I.E. -snap=>0.005 #default is 1 resolution unit, typically 0.001
@@ -1460,289 +1450,285 @@ class GDS2
   #   examples:
   #     gds2File = new GDS2(-fileName => ">$fileName");
   #
-  #     gds2File.printGds2Record(-type=>'header',-data=>3);
-  #     gds2File.printGds2Record(-type=>'bgnlib',-data=>[99,12,1,22,33,0,99,12,1,22,33,9]);
-  #     gds2File.printGds2Record(-type=>'libname',-data=>"testlib");
-  #     gds2File.printGds2Record(-type=>'units',-data=>[0.001, 1e-9]);
-  #     gds2File.printGds2Record(-type=>'bgnstr',-data=>[99,12,1,22,33,0,99,12,1,22,33,9]);
+  #     gds2File.printGds2Record(type: 'header',-data=>3);
+  #     gds2File.printGds2Record(type: 'bgnlib',-data=>[99,12,1,22,33,0,99,12,1,22,33,9]);
+  #     gds2File.printGds2Record(type: 'libname',-data=>"testlib");
+  #     gds2File.printGds2Record(type: 'units',-data=>[0.001, 1e-9]);
+  #     gds2File.printGds2Record(type: 'bgnstr',-data=>[99,12,1,22,33,0,99,12,1,22,33,9]);
   #     ...
-  #     gds2File.printGds2Record(-type=>'endstr');
-  #     gds2File.printGds2Record(-type=>'endlib');
+  #     gds2File.printGds2Record(type: 'endstr');
+  #     gds2File.printGds2Record(type: 'endlib');
   #
   #   Note: the special record type of 'record' can be used to copy a complete record
   #   just read in:
   #     while ($record = gds2FileIn.readGds2Record())
   #     {
-  #         gds2FileOut.printGds2Record(-type=>'record',-data=>$record);
+  #         gds2FileOut.printGds2Record(type: 'record',-data=>$record);
   #     }
   #
 
-def printGds2Record(type: nil, data: nil, asciiData: nil, snap: nil, scale: 1)
-  #p [:prec, type, data]
-  if type
+  def printGds2Record(type: nil, data: nil, asciiData: nil, snap: nil, scale: 1)
+    p [:prec, type, data]
+    raise "printGds2Record expects a type name. Missing type: 'name'" unless type
     type = type.upcase
-  else
-    raise "printGds2Record expects a type name. Missing type: 'name'"
-  end
-  dataString = asciiData
-  raise 'printGds2Record can not handle both data: and asciiData: options' if asciiData && data
 
-  fh = @FileHandle
-  saveEnd = $OUTPUT_RECORD_SEPARATOR
-  $\ = ''
+    dataString = asciiData
+    raise 'printGds2Record can not handle both data: and asciiData: options' if asciiData && data
 
-  data = [] unless data
-  recordLength = nil; ## 1st 2 bytes for length 3rd for recordType 4th for dataType
-  if type == 'RECORD' ## special case...
-  
-    if GDS2.isLittleEndian
+    fh = @FileHandle
+    saveEnd = $OUTPUT_RECORD_SEPARATOR
+    $\ = ''
 
-      length = data[0][0..1]
-      recordLength = length.unpack('v').first
-      @BytesDone += recordLength
-      length = length.reverse
-      fh.print(length)
+    data = [] unless data
+    recordLength = nil ## 1st 2 bytes for length 3rd for recordType 4th for dataType
+    if type == 'RECORD' ## special case...
+      
+      if GDS2.isLittleEndian
 
-      recordType = data[0][2]
+        length = data[0][0..1]
+        recordLength = length.unpack('v').first
+        @BytesDone += recordLength
+        length = length.reverse
+        fh.print(length)
+
+        recordType = data[0][2]
+        fh.print(recordType)
+        recordType = recordType.unpack('C').first
+        type = RECORDTYPESTRINGS[recordType]; ## will use code below.....
+
+        dataType = data[0][3]
+        fh.print(dataType)
+        dataType = dataType.unpack('C').first
+        if recordLength > 4
+
+          lengthLeft = recordLength - 4; ## length left
+          recordDataType = recordtypedata[type]
+
+          if (recordDataType == INTEGER_2) || (recordDataType == BIT_ARRAY)
+
+            binData = data[0].unpack('b*')
+            intData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
+
+            byteInt2String = nil
+            byte2 = nil
+            (0..lengthLeft / 2 - 1).each do |_i|
+              byteInt2String = reverse(substr(intData, 0, 16, ''))
+              byte2 = pack 'B16', reverse(byteInt2String)
+              fh.print(byte2)
+            end
+
+          elsif recordDataType == INTEGER_4
+
+            binData = unpack 'b*', data[0]
+            intData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
+            # (byteInt4String,byte4)
+            (0..lengthLeft / 4 - 1).each do |_i|
+              byteInt4String = reverse(substr(intData, 0, 32, ''))
+              byte4 = pack 'B32', reverse(byteInt4String)
+              fh.print byte4
+            end
+
+          elsif recordDataType == REAL_8
+
+            binData = unpack 'b*', data[0]
+            realData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
+            # (bit64String,mantissa,byteString,byte)
+            (0..lengthLeft / 8 - 1).each do |i|
+              bit64String = substr(realData, (i * 64), 64)
+              fh.print(pack('b8', bit64String))
+              mantissa = substr(bit64String, 8, 56)
+              (0..6).each do |j|
+                byteString = substr(mantissa, (j * 8), 8)
+                byte = pack 'b8', byteString
+                fh.print(byte)
+              end
+            end
+
+          elsif recordDataType == ASCII_STRING ## ascii string (null padded)
+            
+            fh.print pack("a#{lengthLeft}", substr(data[0], 4))
+
+          elsif recordDataType == REAL_4 ## 4 byte real
+
+            raise NotImplementedError, '4-byte reals are not supported'
+          end
+        end
+
+      else
+
+        fh.print(data[0])
+        recordLength = data[0].length
+        @BytesDone += recordLength
+      end
+
+    else # if ($type ne 'RECORD')
+
+      numDataElements = 0
+      resolution = @Resolution
+      uUnits = @UUnits
+
+      raise "printGds2Record expects a positive scale -scale => #{scale}" if scale <= 0
+      
+      snap = if !snap ## default is one resolution unit
+               1
+             else
+               int((snap * resolution) + GDS2::g_epsilon); ## i.e. 0.001 -> 1
+             end
+
+      raise "printGds2Record expects a snap >= 1/resolution -snap => #{snap}" if snap < 1
+
+      unless data.is_a? Array
+        data = [data]
+      end
+      
+      #  data = data[0]
+      numDataElements = data.size
+      #  if numDataElements ## passed in anonymous array
+      #    data = @data; ## deref
+      #  else
+      #    numDataElements = data
+      #  end
+      #end
+
+      recordDataType = RECORDTYPEDATA[type]
+
+      if asciiData
+        dataString = asciiData.strip
+        dataString.gsub!(/\s+/, ' ') if dataString !~ /'/; ## don't compress spaces in strings...
+        dataString.sub!(/'$/, ''); # '# for strings
+        dataString.sub!(/^'/, ''); # '# for strings
+        if (recordDataType == BIT_ARRAY) || (recordDataType == ASCII_STRING)
+          data = dataString
+        else
+
+          dataString.gsub!(/\s*[\s,;:\/\\]+\s*/, ' '); ## in case commas etc... (non-std) were added by hand
+          data = dataString.split(' ')
+          numDataElements = data
+          if recordDataType == INTEGER_4
+
+            xyTmp = []
+            (0..numDataElements - 1).each do |i| ## e.g. 3.4 in -> 3400 out
+              xyTmp << snap_int(data[i])
+            end
+            data = xyTmp
+          end
+        end
+      end
+
+      byte = nil
+      length = 0
+      if recordDataType == BIT_ARRAY
+        length = 2
+      elsif recordDataType == INTEGER_2
+        length = 2 * numDataElements
+      elsif recordDataType == INTEGER_4
+        length = 4 * numDataElements
+      elsif recordDataType == REAL_8
+        length = 8 * numDataElements
+      elsif recordDataType == ASCII_STRING
+        data = data.first
+        slen = data.length
+        length = slen + (slen % 2); ## needs to be an even number
+        #p [:strlencompute, data, slen, length]
+      end
+      @BytesDone += length
+      #p [:datax, data, numDataElements, recordDataType]
+      
+      if GDS2.isLittleEndian
+        recordLength = [(length + 4)].pack 'v'
+        recordLength = recordLength.reverse
+      else
+        recordLength = [(length + 4)].pack 'S'
+      end
+      fh.print(recordLength)
+
+      recordType = [RECORDTYPENUMBERS[type]].pack 'C'
+      recordType = recordType.reverse if GDS2.isLittleEndian
       fh.print(recordType)
-      recordType = recordType.unpack('C').first
-      type = RECORDTYPESTRINGS[recordType]; ## will use code below.....
 
-      dataType = data[0][3]
+      dataType = [RECORDTYPEDATA[type]].pack 'C'
+      dataType = dataType.reverse if GDS2.isLittleEndian
       fh.print(dataType)
-      dataType = dataType.unpack('C').first
-      if recordLength > 4
+      #p [:xx, data]
+      if recordDataType == BIT_ARRAY      ## bit array
+        bitLength = length * 8
+        value = data.pack("B#{bitLength}")
+        fh.print(value)
 
-        lengthLeft = recordLength - 4; ## length left
-        recordDataType = recordtypedata[type]
+      elsif recordDataType == INTEGER_2   ## 2 byte signed integer
+        p data
+        # value
+        data.each do |num|
+          value = [num].pack('s')
+          value = value.reverse if GDS2.isLittleEndian
+          fh.print(value)
+        end
 
-        if (recordDataType == INTEGER_2) || (recordDataType == BIT_ARRAY)
+      elsif recordDataType == INTEGER_4 ## 4 byte signed integer
 
-          binData = data[0].unpack('b*')
-          intData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
+        # value
+        data.each do |num|
+          num = scaleNum(num, scale) if scale != 1
+          num = snapNum(num, snap) if snap != 1
+          value = [num].pack('i')
+          value = value.reverse if GDS2.isLittleEndian
+          fh.print(value)
+        end
 
-          byteInt2String = nil
-          byte2 = nil
-          (0..lengthLeft / 2 - 1).each do |_i|
-            byteInt2String = reverse(substr(intData, 0, 16, ''))
-            byte2 = pack 'B16', reverse(byteInt2String)
-            fh.print(byte2)
+      elsif recordDataType == REAL_8 ## 8 byte real
+
+        # (real,negative,exponent,value)
+        p [:realdata, data]
+        data.each do |num|
+          num = num.to_f
+          real = num
+          negative = false
+          if num < 0.0
+            negative = true
+            real = 0.0 - num
           end
 
-        elsif  recordDataType == INTEGER_4
-
-          binData = unpack 'b*', data[0]
-          intData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
-          # (byteInt4String,byte4)
-          (0..lengthLeft / 4 - 1).each do |_i|
-            byteInt4String = reverse(substr(intData, 0, 32, ''))
-            byte4 = pack 'B32', reverse(byteInt4String)
-            fh.print byte4
+          exponent = 0
+          while real >= 1.0
+            exponent += 1
+            real = (real / 16.0)
           end
 
-        elsif  recordDataType == REAL_8
-
-          binData = unpack 'b*', data[0]
-          realData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
-          # (bit64String,mantissa,byteString,byte)
-          (0..lengthLeft / 8 - 1).each do |i|
-            bit64String = substr(realData, (i * 64), 64)
-            fh.print(pack('b8', bit64String))
-            mantissa = substr(bit64String, 8, 56)
-            (0..6).each do |j|
-              byteString = substr(mantissa, (j * 8), 8)
-              byte = pack 'b8', byteString
-              fh.print(byte)
+          if real != 0
+            while real < 0.0625
+              --exponent
+              real = (real * 16.0)
             end
           end
 
-        elsif  recordDataType == ASCII_STRING ## ascii string (null padded)
+          exponent +=  negative ? 192 : 64
+          value = [exponent].pack('C')
+          value = value.reverse if GDS2.isLittleEndian
+          fh.print(value)
+          dbgstr = [:exp, value.ord]
+          (1..7).each do |i|
+            byte = if real >= 0
+                     (real * 256.0) + GDS2::g_epsilon
+                   else
+                     (real * 256.0) - GDS2::g_epsilon
+                   end
+            value = [byte.to_i].pack('C')
+            value = value.reverse if GDS2.isLittleEndian
+            fh.print(value)
+            dbgstr << [i, value.ord, value, real]
 
-          fh.print pack("a#{lengthLeft}", substr(data[0], 4))
-
-        elsif  recordDataType == REAL_4 ## 4 byte real
-
-          raise NotImplementedError, '4-byte reals are not supported'
-        end
-      end
-
-    else
-
-      fh.print(data[0])
-      recordLength = data[0].length
-      @BytesDone += recordLength
-    end
-
-  else # if ($type ne 'RECORD')
-
-    numDataElements = 0
-    resolution = @Resolution
-    uUnits = @UUnits
-
-    if scale <= 0
-      raise "printGds2Record expects a positive scale -scale => #{scale}"
-    end
-
-    snap = if !snap ## default is one resolution unit
-             1
-           else
-             int((snap * resolution) + GDS2::g_epsilon); ## i.e. 0.001 -> 1
-           end
-
-    raise "printGds2Record expects a snap >= 1/resolution -snap => #{snap}" if snap < 1
-
-    unless data.is_a? Array
-      data = [data]
-    end
-    
-    #  data = data[0]
-      numDataElements = data.size
-    #  if numDataElements ## passed in anonymous array
-    #    data = @data; ## deref
-    #  else
-    #    numDataElements = data
-    #  end
-    #end
-
-    recordDataType = RECORDTYPEDATA[type]
-
-    if asciiData
-      dataString = asciiData.strip
-      dataString.gsub!(/\s+/, ' ') if dataString !~ /'/; ## don't compress spaces in strings...
-      dataString.sub!(/'$/, ''); # '# for strings
-      dataString.sub!(/^'/, ''); # '# for strings
-      if (recordDataType == BIT_ARRAY) || (recordDataType == ASCII_STRING)
-        data = dataString
-      else
-
-        dataString.gsub!(/\s*[\s,;:\/\\]+\s*/, ' '); ## in case commas etc... (non-std) were added by hand
-        data = dataString.split(' ')
-        numDataElements = data
-        if recordDataType == INTEGER_4
-
-          xyTmp = []
-          (0..numDataElements - 1).each do |i| ## e.g. 3.4 in -> 3400 out
-            xyTmp << if data[i] >= 0
-            int(((data[i]) * resolution) + GDS2::g_epsilon)
-          else
-            int(((data[i]) * resolution) - GDS2::g_epsilon)
+            real = real * 256.0 - (byte + 0.0)
           end
+          pp dbgstr
         end
-        data = xyTmp
+
+      elsif recordDataType == ASCII_STRING ## ascii string (null padded)
+        #p [:asciiData, data, [data].pack("a*"), length]
+        fh.print([data].pack("a#{length}"))
       end
     end
+    $\ = saveEnd
   end
-
-  byte = nil
-  length = 0
-  if recordDataType == BIT_ARRAY
-    length = 2
-  elsif  recordDataType == INTEGER_2
-    length = 2 * numDataElements
-  elsif  recordDataType == INTEGER_4
-    length = 4 * numDataElements
-  elsif  recordDataType == REAL_8
-    length = 8 * numDataElements
-  elsif  recordDataType == ASCII_STRING
-    slen = data.length
-    length = slen + (slen % 2); ## needs to be an even number
-  end
-  @BytesDone += length
-
-  if GDS2.isLittleEndian
-    recordLength = [(length + 4)].pack 'v'
-    recordLength = recordLength.reverse
-  else
-    recordLength = [(length + 4)].pack 'S'
-  end
-  fh.print(recordLength)
-
-  recordType = [RECORDTYPENUMBERS[type]].pack 'C'
-  recordType = recordType.reverse if GDS2.isLittleEndian
-  fh.print(recordType)
-
-  dataType = [RECORDTYPEDATA[type]].pack 'C'
-  dataType = dataType.reverse if GDS2.isLittleEndian
-  fh.print(dataType)
-  #p [:xx, data]
-  if  recordDataType == BIT_ARRAY      ## bit array
-    bitLength = length * 8
-    value = data.pack("B#{bitLength}")
-    fh.print(value)
-
-  elsif  recordDataType == INTEGER_2   ## 2 byte signed integer
-    p data
-    # value
-    data.each do |num|
-      value = [num].pack('s')
-      value = value.reverse if GDS2.isLittleEndian
-      fh.print(value)
-    end
-
-  elsif  recordDataType == INTEGER_4 ## 4 byte signed integer
-
-    # value
-    data.each do |num|
-      num = scaleNum(num, scale) if scale != 1
-      num = snapNum(num, snap) if snap != 1
-      value = [num].pack('i')
-      value = value.reverse if GDS2.isLittleEndian
-      fh.print(value)
-    end
-
-  elsif  recordDataType == REAL_8 ## 8 byte real
-
-    # (real,negative,exponent,value)
-    p [:reald, data]
-    data.each do |num|
-      num = num.to_f
-      real = num
-      negative = false
-      if num < 0.0
-        negative = true
-        real = 0 - num
-      end
-
-      exponent = 0
-      while real >= 1.0
-
-        exponent += 1
-        real = (real / 16.0)
-      end
-
-      if real != 0
-
-        while real < 0.0625
-
-          --exponent
-          real = (real * 16.0)
-        end
-      end
-      exponent +=  negative ? 192 : 64
-      value = [exponent].pack('C')
-      value = value.reverse if GDS2.isLittleEndian
-      fh.print(value)
-
-      (1..7).each do |_i|
-        byte = if real >= 0
-                 (real * 256.0) + GDS2::g_epsilon
-               else
-                 (real * 256.0) - GDS2::g_epsilon
-               end
-        value = [byte.to_i].pack('C')
-        value = value.reverse if GDS2.isLittleEndian
-        fh.print(value)
-        real = real * 256.0 - (byte + 0.0)
-      end
-    end
-
-  elsif  recordDataType == ASCII_STRING ## ascii string (null padded)
-    p data
-    fh.print(data.pack("a#{length}"))
-  end
-end
-$\ = saveEnd
-end
 
 ############################################################################
 
@@ -1761,7 +1747,7 @@ end
       raise "printGds2Record expects a data record. Missing -data => \#{record}"
     end
     type = arg['-type']
-    if   type
+    if  type
 
       raise 'printRecord does not take -type. Perhaps you meant to use printGds2Record?'
     end
@@ -1842,9 +1828,9 @@ end
       @EOLIB = true if @RecordType == ENDLIB
 
       if @UsingPrettyPrint
-        putStrSpace('')   if  @RecordType == ENDSTR
-        putStrSpace('  ') if  @RecordType == BGNSTR
-        putElmSpace('  ') if  (@RecordType == TEXT) || (@RecordType == PATH) ||
+        putStrSpace('')   if @RecordType == ENDSTR
+        putStrSpace('  ') if @RecordType == BGNSTR
+        putElmSpace('  ') if (@RecordType == TEXT) || (@RecordType == PATH) ||
                               (@RecordType == BOUNDARY) || (@RecordType == SREF) ||
                               (@RecordType == AREF)
         if @RecordType == ENDEL
@@ -1889,7 +1875,7 @@ end
 
   def readGds2RecordData
     readGds2RecordHeader if @INHEADER != true; # program did not read HEADER - needs to...
-    return @Record if  @DataType == NO_REC_DATA; # no sense going on...
+    return @Record if @DataType == NO_REC_DATA; # no sense going on...
     @INHEADER = false; # not in HEADER - need to read HEADER next time around...
     @INDATA   = true;  # rather in DATA - actually will be at the end of data by the time we test this...
     # @RecordData = ''
@@ -1907,7 +1893,7 @@ end
       @RecordData[0] = data.unpack "B#{bitsLeft}"
       @CurrentDataList = (@RecordData[0])
 
-    elsif  @DataType == INTEGER_2   ## 2 byte signed integer
+    elsif @DataType == INTEGER_2   ## 2 byte signed integer
 
       tmpListString = ''
       i = 0
@@ -1924,7 +1910,7 @@ end
       @DataIndex = i - 1
       @CurrentDataList = tmpListString
 
-    elsif  @DataType == INTEGER_4   ## 4 byte signed integer
+    elsif @DataType == INTEGER_4   ## 4 byte signed integer
 
       tmpListString = ''
       i = 0
@@ -1943,11 +1929,11 @@ end
       @DataIndex = i - 1
       @CurrentDataList = tmpListString
 
-    elsif  @DataType == REAL_4   ## 4 byte real
+    elsif @DataType == REAL_4   ## 4 byte real
 
       raise NotImplementedError, '4-byte reals are not supported'
 
-    elsif  @DataType == REAL_8   ## 8 byte real - UNITS, MAG, ANGLE
+    elsif @DataType == REAL_8   ## 8 byte real - UNITS, MAG, ANGLE
 
       resolution = @Resolution
       tmpListString = ''
@@ -2009,7 +1995,6 @@ end
   # = Low Level Generic Evaluation Methods
   #
   ############################################################################
-
   # == returnRecordType - returns current (read) record type as integer
   #
   #   usage:
@@ -2020,8 +2005,8 @@ end
   def returnRecordType
     @RecordType
   end
-  ############################################################################
 
+  ############################################################################
   # == returnRecordTypeString - returns current (read) record type as string
   #
   #   usage:
@@ -2029,12 +2014,11 @@ end
   #       code goes here...
   #   end
   #
-
   def returnRecordTypeString
     RECORDTYPESTRINGS[@RecordType]
   end
-  ############################################################################
 
+  ############################################################################
   # == returnRecordAsString - returns current (read) record as a string
   #
   #   usage:
@@ -2071,7 +2055,7 @@ end
     i = 0
     while i <= @DataIndex
       # puts "INFO: #{@DataIndex} #{@DataType}"
-      if  @DataType == BIT_ARRAY
+      if @DataType == BIT_ARRAY
 
         bitString = @RecordData[i]
         if GDS2.isLittleEndian
@@ -2085,16 +2069,16 @@ end
           if inText && (@RecordType != STRANS)
 
             string += ' f'
-            string += '0' if  bitString =~ /00....$/
-            string += '1' if  bitString =~ /01....$/
-            string += '2' if  bitString =~ /10....$/
-            string += '3' if  bitString =~ /11....$/
-            string += ' t' if  bitString =~ /00..$/
-            string += ' m' if  bitString =~ /01..$/
-            string += ' b' if  bitString =~ /10..$/
-            string += 'l' if  bitString =~ /00$/
-            string += 'c' if  bitString =~ /01$/
-            string += 'r' if  bitString =~ /10$/
+            string += '0' if bitString =~ /00....$/
+            string += '1' if bitString =~ /01....$/
+            string += '2' if bitString =~ /10....$/
+            string += '3' if bitString =~ /11....$/
+            string += ' t' if bitString =~ /00..$/
+            string += ' m' if bitString =~ /01..$/
+            string += ' b' if bitString =~ /10..$/
+            string += 'l' if bitString =~ /00$/
+            string += 'c' if bitString =~ /01$/
+            string += 'r' if bitString =~ /10$/
           end
 
         else
@@ -2102,12 +2086,12 @@ end
           string += '  ' + bitString
         end
 
-      elsif  @DataType == INTEGER_2
+      elsif @DataType == INTEGER_2
 
         if compact
           if dateFld
             num = @RecordData[i]
-            if  dateFld =~ /^[17]$/
+            if dateFld =~ /^[17]$/
               if dateFld == '1'
                 string += if recordType == 'BGNLIB'
                             'm='
@@ -2124,10 +2108,10 @@ end
               num += 1900 if num < 1900
             end
             num = format('%02d', num)
-            string += '-' if  dateFld =~ /^[2389]/
-            string += ':' if  dateFld =~ /^[56]/
-            string += ':' if  dateFld =~ /^1[12]/
-            string += ' ' if  (dateFld == '4') || (dateFld == '10')
+            string += '-' if dateFld =~ /^[2389]/
+            string += ':' if dateFld =~ /^[56]/
+            string += ':' if dateFld =~ /^1[12]/
+            string += ' ' if (dateFld == '4') || (dateFld == '10')
             string += num
           else
             string += ' ' unless string =~ / (a|m|pt|dt|tt)$/i
@@ -2139,12 +2123,12 @@ end
           string += @RecordData[i].to_s
         end
 
-        if  recordType == 'UNITS'
+        if recordType == 'UNITS'
           string.sub!(/(\d)\.e/, '\\1e'); ## perl on Cygwin prints "1.e-9" others "1e-9"
           string.sub!(/(\d)e\-0+/, '\\1e-'); ## different perls print 1e-9 1e-09 1e-009 etc... standardize to 1e-9
         end
 
-      elsif  @DataType == INTEGER_4
+      elsif @DataType == INTEGER_4
 
         if compact
           string += ' ' if i
@@ -2152,7 +2136,7 @@ end
           string += '  '
         end
 
-        string += cleanFloatNum(@RecordData[i] * @UUnits)
+        string += cleanFloatNum(@RecordData[i] * @UUnits).to_s
         if compact && i && (i == @RecordData.size)
           string.sub!(/ +[\d\.\-]+ +[\d\.\-]+$/, '') if inBoundary; # remove last point
           string += ')'
@@ -2172,9 +2156,9 @@ end
               else
                 cleanFloatNum(num)
               end
-        string += num
+        string += num.to_s
 
-        if  recordType == 'UNITS'
+        if recordType == 'UNITS'
           string.sub!(/(\d)\.e/, '\\1e'); ## perl on Cygwin prints "1.e-9" others "1e-9"
           string.sub!(/(\d)e\-0+/, '\\1e-'); ## different perls print 1e-9 1e-09 1e-009 etc... standardize to shorter 1e-9
         end
@@ -2188,7 +2172,7 @@ end
       dateFld += 1 if dateFld
     end
 
-    if compact # && false
+    if compact
       g_gdtstring = '' # G_GDTSTRING
       g_gdtstring += string
       if (g_gdtstring =~ /}$/ || g_gdtstring =~ /^(gds2|lib|m).*\d$/) || (g_gdtstring =~ /^cell.*'$/)
@@ -2253,7 +2237,7 @@ end
   #
   #   usage:
   #   #!/usr/local/bin/perl
-  #   use GDS2;
+  #   require 'gds2'
   #   gds2File = new GDS2(-fileName=>"test.gds");
   #   while (gds2File.readGds2Record)
   #   {
@@ -2288,11 +2272,11 @@ end
       (@RecordType == ENDSTR) ||
       (@RecordType == ENDLIB)
 
-      string += gds2File + '->' + pgr + '(-type=>' + "'" + recordtypestrings[@RecordType] + "'" + ');'
+      string += gds2File + '.' + pgr + '(type: ' + "'" + recordtypestrings[@RecordType] + "'" + ');'
 
     else
 
-      string += gds2File + '->' + pgr + '(-type=>' + "'" + recordtypestrings[@RecordType] + "',-data=>"
+      string += gds2File + '.' + pgr + '(type: ' + "'" + recordtypestrings[@RecordType] + "',data: "
       i = 0
       maxi = @DataIndex
       string += '[' if maxi >= 1
@@ -2308,19 +2292,19 @@ end
           end
           string += "'#{bitString}'"
 
-        elsif  @DataType == INTEGER_2
+        elsif @DataType == INTEGER_2
 
           string += @RecordData[i]
 
-        elsif  @DataType == INTEGER_4
+        elsif @DataType == INTEGER_4
 
           string += @RecordData[i]
 
-        elsif  @DataType == REAL_8
+        elsif @DataType == REAL_8
 
           string += @RecordData[i]
 
-        elsif  @DataType == ASCII_STRING
+        elsif @DataType == ASCII_STRING
 
           string += "'" + @RecordData[i] + "'"
         end
@@ -2370,12 +2354,7 @@ end
 
   def printBgnextn(num: nil)
     raise 'printBgnextn expects a extension number. Missing num: #.#' unless num
-    resolution = @Resolution
-    num = if num >= 0
-            int((num * resolution) + GDS2::g_epsilon)
-          else
-            int((num * resolution) - GDS2::g_epsilon); end
-    printGds2Record(type: 'BGNEXTN', data: num)
+    printGds2Record(type: 'BGNEXTN', data: snap_int(num))
   end
 
   ############################################################################
@@ -2473,13 +2452,7 @@ end
 
   def printEndextn(num: nil)
     raise 'printEndextn expects a extension number. Missing num: #.#' unless num
-    resolution = @Resolution
-    num = if num >= 0
-            (num * resolution) + GDS2::g_epsilon
-          else
-            (num * resolution) - GDS2::g_epsilon
-          end
-    printGds2Record(type: 'ENDEXTN', data: num.to_i)
+    printGds2Record(type: 'ENDEXTN', data: snap_int(num))
   end
   ############################################################################
 
@@ -2673,8 +2646,8 @@ end
     left   = arg['-left']
     center = arg['-center']
     right  = arg['-right']
-    if      left   horizontal = '00'
-    elsif   right  horizontal = '10'
+    if    left   horizontal = '00'
+    elsif right  horizontal = '10'
     else horizontal = '01'
     end ## center
     bitstring = '0' * 10
@@ -2909,10 +2882,7 @@ end
     end
     xyTmp = [] # #don't pollute array passed in
     xy.each do |xyi| ## e.g. 3.4 in -> 3400 out
-      xyTmp << if xyi >= 0
-                 int((xyi * resolution) + GDS2::g_epsilon)
-               else
-                 int((xyi * resolution) - GDS2::g_epsilon); end
+      xyTmp << snap_int(xyi)
     end
     printGds2Record(type: 'XY', data: xyTmp)
   end
