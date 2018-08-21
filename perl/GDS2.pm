@@ -1632,6 +1632,7 @@ sub saveGds2Record
         }
         elsif ($recordDataType == REAL_8)  ## 8 byte real
         {
+
             foreach my $num (@data)
             {
                 my $real = $num;
@@ -1967,9 +1968,11 @@ sub printGds2Record
         }
         elsif ($recordDataType == REAL_8)  ## 8 byte real
         {
+
             my ($real,$negative,$exponent,$value);
             foreach my $num (@data)
             {
+		printf("realdata %s\n", $num);
                 $real = $num;
                 $negative = FALSE;
                 if($num < 0.0)
@@ -1983,6 +1986,7 @@ sub printGds2Record
                 {
                     $exponent++;
                     $real = ($real / 16.0);
+		    printf("realexh %s %s\n",$real,$exponent);
                 }
 
                 if ($real != 0)
@@ -1991,6 +1995,7 @@ sub printGds2Record
                     {
                         --$exponent;
                         $real = ($real * 16.0);
+			printf("realexl %s %s\n",$real,$exponent);
                     }
                 }
                 if($negative) { $exponent += 192; }
@@ -1998,6 +2003,7 @@ sub printGds2Record
                 $value = pack('C',$exponent);
                 $value = reverse $value if ($isLittleEndian);
                 print($fh $value);
+		printf(":exp %s\n", ord($value));
 
                 for (my $i=1; $i<=7; $i++)
                 {
@@ -2006,6 +2012,8 @@ sub printGds2Record
                     my $value = pack('C',$byte);
                     $value = reverse $value if ($isLittleEndian);
                     print($fh $value);
+		    printf("$i, %s, %s, %s, %s\n",ord($value), $value, $real, $byte);
+
                     $real = $real * 256.0 - ($byte + 0.0);
                 }
             }

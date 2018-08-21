@@ -490,15 +490,15 @@ class GDS2
   #     read and a new file to create.
   #     #!/usr/bin/perl -w
   #     require 'gds2'
-  #     $fileName1 = $ARGV[0];
-  #     $fileName2 = $ARGV[1];
-  #     gds2File1 = new GDS2(-fileName => $fileName1);
-  #     gds2File2 = new GDS2(-fileName => ">$fileName2");
-  #     while ($record = gds2File1.readGds2Record)
+  #     fileName1 = ARGV[0];
+  #     fileName2 = ARGV[1];
+  #     gds2File1 = GDS2.new(fileName:  fileName1);
+  #     gds2File2 = GDS2.new(fileName:  ">fileName2");
+  #     while (record = gds2File1.readGds2Record)
   #         if (gds2File1.returnLayer == 59)
-  #             gds2File2.printLayer(-num=>66);
+  #             gds2File2.printLayer(num: 66);
   #         else
-  #             gds2File2.printRecord(-data=>$record);
+  #             gds2File2.printRecord(data: record);
   #         end
   #     end
   #
@@ -507,53 +507,50 @@ class GDS2
   #     here's a complete program to dump the contents of a stream file.
   #     #!/usr/bin/perl -w
   #     require 'gds2'
-  #     $\="\n";
-  #     gds2File = new GDS2(-fileName=>$ARGV[0]);
-  #     while (gds2File.readGds2Record)
-  #     {
-  #         print gds2File.returnRecordAsString;
-  #     }
+  #     gds2File = GDS2.new(fileName: ARGV[0]);
+  #     while gds2File.readGds2Record
+  #       puts gds2File.returnRecordAsString;
+  #     end
   #
   #
   #   Gds2 dump in GDT format: which is smaller and easier to parse - http://sourceforge.net/projects/gds2/
   #     #!/usr/bin/perl -w
   #     require 'gds2'
-  #     gds2File = new GDS2(-fileName=>$ARGV[0]);
-  #     while (gds2File.readGds2Record)
-  #     {
-  #         print gds2File.returnRecordAsString(-compact=>1);
-  #     }
+  #     gds2File = GDS2.new(fileName: ARGV[0]);
+  #     while gds2File.readGds2Record
+  #       puts gds2File.returnRecordAsString(compact: 1);
+  #     end
   #
   #   Dump from the command line of a bzip2 compressed file:
-  #   perl -MGDS2 -MFileHandle -MIPC::Open3 -e '$f1=new FileHandle;$f0=new FileHandle;open3($f0,$f1,$f1,"bzcat test.gds.bz2");gds=new GDS2(-fileHandle=>$f1);while(gds->readGds2Record){print gds->returnRecordAsString(-compact=>1)}'
+  #   perl -MGDS2 -MFileHandle -MIPC::Open3 -e 'f1=new FileHandle;f0=new FileHandle;open3(f0,f1,f1,"bzcat test.gds.bz2");gds=GDS2.new(fileHandle: f1);while(gds->readGds2Record){print gds->returnRecordAsString(compact: 1)}'
   #
   #   Create a complete GDS2 stream file from scratch:
   #     #!/usr/bin/perl -w
   #     require 'gds2'
-  #     gds2File = new GDS2(-fileName=>'>test.gds');
-  #     gds2File.printInitLib(-name=>'testlib');
-  #     gds2File.printBgnstr(-name=>'test');
+  #     gds2File = GDS2.new(fileName: '>test.gds');
+  #     gds2File.printInitLib(name: 'testlib');
+  #     gds2File.printBgnstr(name: 'test');
   #     gds2File.printPath(
-  #                     -layer=>6,
-  #                     -pathType=>0,
-  #                     -width=>2.4,
-  #                     -xy=>[0,0, 10.5,0, 10.5,3.3],
+  #                     layer: 6,
+  #                     pathType: 0,
+  #                     width: 2.4,
+  #                     xy: [0,0, 10.5,0, 10.5,3.3],
   #                  );
   #     gds2File.printSref(
-  #                     -name=>'contact',
-  #                     -xy=>[4,5.5],
+  #                     name: 'contact',
+  #                     xy: [4,5.5],
   #                  );
   #     gds2File.printAref(
-  #                     -name=>'contact',
-  #                     -columns=>2,
-  #                     -rows=>3,
-  #                     -xy=>[0,0, 10,0, 0,15],
+  #                     name: 'contact',
+  #                     columns: 2,
+  #                     rows: 3,
+  #                     xy: [0,0, 10,0, 0,15],
   #                  );
   #     gds2File.printEndstr;
-  #     gds2File.printBgnstr(-name => 'contact');
+  #     gds2File.printBgnstr(name:  'contact');
   #     gds2File.printBoundary(
-  #                     -layer=>10,
-  #                     -xy=>[0,0, 1,0, 1,1, 0,1],
+  #                     layer: 10,
+  #                     xy: [0,0, 1,0, 1,1, 0,1],
   #                  );
   #     gds2File.printEndstr;
   #     gds2File.printEndlib();
@@ -570,7 +567,7 @@ class GDS2
   #
   #   -or- provide your own fileHandle:
   #
-  #   gds2File  = GDS2.new(fileHandle: $fh); ## e.g. to attach to a compression/decompression pipe
+  #   gds2File  = GDS2.new(fileHandle: fh); ## e.g. to attach to a compression/decompression pipe
   #
 
   def initialize(fileName: nil, fileHandle: nil, resolution: 1000, mode: 'r')
@@ -667,30 +664,29 @@ class GDS2
   #   usage:
   #   gds2File.close;
   #    -or-
-  #   gds2File.close(-markEnd=>1); ## -- some systems have trouble closing files
-  #   gds2File.close(-pad=>2048);  ## -- pad end with \0's till file size is a
+  #   gds2File.close(markEnd: 1); ## -- some systems have trouble closing files
+  #   gds2File.close(pad: 2048);  ## -- pad end with \0's till file size is a
   #                                    ## multiple of number. Note: old reel to reel tapes on Calma
   #                                    ## systems used 2048 byte blocks
   #
 
   def close (markEnd: nil, pad: nil)
+    fh = @FileHandle
     if markEnd
-      fh = @FileHandle
       fh.print "\x1a\x04"; # a ^Z and a ^D
       @BytesDone += 2
     end
     if pad && (pad > 0)
-      fh = @FileHandle
       fh.flush
-      fh.seek(0, SEEK_END)
+      fh.seek(0, IO::SEEK_END) # ??? unclear why we need this..
       fileSize = fh.tell
       padSize = pad - (fileSize % pad)
       padSize = 0 if padSize == pad
-      (0..padSize).each do
+      padSize.times do
         fh.print "\0" ## a null
       end
     end
-    @FileHandle.close
+    fh.close
   end
   ############################################################################
 
@@ -704,10 +700,10 @@ class GDS2
   # The default is to create a library with a default unit of 1 micron that has a resolution of 1000.
   # To get this set uUnit to 0.001 (1/1000) and the dbUnit to 1/1000th of a micron (1e-9).
   #    usage:
-  #      gds2File.printInitLib(-name    => "testlib",  ## required
-  #                                -isoDate => 0|1         ## (optional) use ISO 4 digit date 2001 vs 101
-  #                                -uUnit   => real number ## (optional) default is 0.001
-  #                                -dbUnit  => real number ## (optional) default is 1e-9
+  #      gds2File.printInitLib(name:  "testlib",  ## required
+  #                                isoDate:  0|1         ## (optional) use ISO 4 digit date 2001 vs 101
+  #                                uUnit:  Float ## (optional) default is 0.001
+  #                                dbUnit:  Float ## (optional) default is 1e-9
   #                               );
   #
   #      ## defaults to current date for library date
@@ -732,7 +728,7 @@ class GDS2
     #################################################
 
     t = Time.now
-    isoadjust = isoDate ? 1900 : 0  ## Cadence likes year left "as is". GDS format supports year number up to 65535 -- 101 vs 2001
+    isoadjust = isoDate ? 0 : -1900  ## Cadence likes year left "as is". GDS format supports year number up to 65535 -- 101 vs 2001
     printGds2Record(type: 'HEADER', data: 3); ## GDS2 HEADER
     printGds2Record(type: 'BGNLIB', data: [t.year + isoadjust, t.mon, t.mday, t.hour, t.min, t.sec,
                                            t.year + isoadjust, t.mon, t.mday, t.hour, t.min, t.sec])
@@ -745,7 +741,7 @@ class GDS2
   #
   #    usage:
   #     gds2File.printBgnstr(name: "nand3" ## writes BGNSTR and STRNAME records
-  #                          isoDate: => 1|0  ## (optional) use ISO 4 digit date 2001 vs 101
+  #                          isoDate: 1|0  ## (optional) use ISO 4 digit date 2001 vs 101
   #                         )
   #
   #    note:
@@ -756,9 +752,9 @@ class GDS2
     raise "bgnStr expects a structure name. Missing name: 'name'" unless name
     ct = createTime
     mt = modTime
-    isoyear = isoDate ? 1900 : 0 ## 2001 vs 101
-    printGds2Record(type: 'BGNSTR', data: [ct.year+isoyear, ct.mon, ct.mday, ct.hour, ct.min, ct.sec,
-                                           mt.year+isoyear, mt.mon, mt.mday, mt.hour, mt.min, mt.sec])
+    iso_adjust = isoDate ? 0 : -1900 ## 2001 vs 101
+    printGds2Record(type: 'BGNSTR', data: [ct.year + iso_adjust, ct.mon, ct.mday, ct.hour, ct.min, ct.sec,
+                                           mt.year + iso_adjust, mt.mon, mt.mday, mt.hour, mt.min, mt.sec])
     printGds2Record(type: 'STRNAME', data: name)
   end
 
@@ -767,15 +763,15 @@ class GDS2
   #
   #   usage:
   #     gds2File.printPath(
-  #                     -layer=>#,
-  #                     -dataType=>#,     ##optional
-  #                     -pathType=>#,
-  #                     -width=>#.#,
-  #                     -unitWidth=>#,    ## (optional) directly specify width in data base units (vs -width which is multipled by resolution)
+  #                     layer: #,
+  #                     dataType: #,     ##optional
+  #                     pathType: #,
+  #                     width: #.#,
+  #                     unitWidth: #,    ## (optional) directly specify width in data base units (vs -width which is multipled by resolution)
   #
-  #                     -xy=>Array,     ## array of reals
+  #                     xy: Array,     ## array of reals
   #                       # -or-
-  #                     -xyInt=>Array,  ## array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
+  #                     xyInt: Array,  ## array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
   #                   );
   #
   #   note:
@@ -802,8 +798,8 @@ class GDS2
     end
     width = widthi
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    ## $xyInt should be a reference to an array of internal GDS2 format integers
-    ## $xy should be a reference to an array of reals
+    ## xyInt should be a reference to an array of internal GDS2 format integers
+    ## xy should be a reference to an array of reals
     xyTmp = []; # #don't pollute array passed in
     unless xy || xyInt
       raise "printPath expects an xy array reference. Missing xy: Array"
@@ -813,10 +809,10 @@ class GDS2
       resolution = 1
     end
     printGds2Record(type: 'PATH')
-    printGds2Record(type: 'LAYER', data: layer)
-    printGds2Record(type: 'DATATYPE', data: dataType)
-    printGds2Record(type: 'PATHTYPE', data: pathType) if pathType
-    printGds2Record(type: 'WIDTH', data: width) if width
+    printLayer(num: layer)
+    printDatatype(num: dataType)
+    printPathtype(num: pathType)
+    printWidth(num: width)
     if pathType == 4
       printGds2Record(type: 'BGNEXTN', data: bgnExtn); ## int used with resolution
       printGds2Record(type: 'ENDEXTN', data: endExtn); ## int used with resolution
@@ -906,12 +902,12 @@ class GDS2
   #
   #   usage:
   #     gds2File.printBoundary(
-  #                     -layer=>#,
-  #                     -dataType=>#,
+  #                     layer: #,
+  #                     dataType: #,
   #
-  #                     -xy=>Array,     ## ref to array of reals
+  #                     xy: Array,     ## ref to array of reals
   #                       # -or-
-  #                     -xyInt=>Array,  ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
+  #                     xyInt: Array,  ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
   #                  );
   #
   #   note:
@@ -928,7 +924,7 @@ class GDS2
     ## xy should be a reference to an array of reals
     xyTmp = []; # #don't pollute array passed in
     unless  xy || xyInt
-      raise "printBoundary expects an xy array reference. Missing -xy => \\\#{array}"
+      raise "printBoundary expects an xy array reference. Missing xy:  \\\#{array}"
     end
     if xyInt
       xy = xyInt
@@ -959,15 +955,15 @@ class GDS2
   #
   #   usage:
   #     gds2File.printSref(
-  #                     -name=>string,   ## Name of structure
+  #                     name: string,   ## Name of structure
   #
-  #                     -xy=>Array,    ## ref to array of reals
+  #                     xy: Array,    ## ref to array of reals
   #                       # -or-
-  #                     -xyInt=>Array, ## ref to array of internal ints (optional -wks better than -xy if you are modifying an existing GDS2 file)
+  #                     xyInt: Array, ## ref to array of internal ints (optional -wks better than -xy if you are modifying an existing GDS2 file)
   #
-  #                     -angle=>#.#,     ## (optional) Default is 0.0
-  #                     -mag=>#.#,       ## (optional) Default is 1.0
-  #                     -reflect=>0|1    ## (optional)
+  #                     angle: #.#,     ## (optional) Default is 0.0
+  #                     mag: #.#,       ## (optional) Default is 1.0
+  #                     reflect: 0|1    ## (optional)
   #                  );
   #
   #   note:
@@ -977,13 +973,12 @@ class GDS2
   # <SREF>::= SREF [ELFLAGS] [PLEX] SNAME [<strans>] XY
   #  <strans>::=   STRANS [MAG] [ANGLE]
   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-  def printSref(*arg, name: nil, xy: nil, xyInt: nil, angle: nil, mag: 1.0, reflect: nil)
-    useSTRANS = false
+  def printSref(*arg, name: nil, xy: nil, xyInt: nil, angle: nil, mag: nil, reflect: nil)
     resolution = @Resolution
     raise "printSref expects a name string. Missing name: 'text'" unless name
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    ## $xyInt should be a reference to an array of internal GDS2 format integers
-    ## $xy should be a reference to an array of reals
+    ## xyInt should be a reference to an array of internal GDS2 format integers
+    ## xy should be a reference to an array of reals
     unless  xy || xyInt
       raise "printSref expects an xy array reference. Missing xy: Array"
     end
@@ -993,39 +988,14 @@ class GDS2
     end
     printGds2Record(type: 'SREF')
     printGds2Record(type: 'SNAME', data: name)
-    if !reflect || (reflect <= 0)
-      reflect = 0
-    else
 
-      reflect = 1
-      useSTRANS = true
-    end
-
-    if !mag || (mag <= 0)
-      mag = 0
-    else
-      mag = cleanFloatNum(mag)
-      useSTRANS = true
-    end
-
-    if !angle
-      angle = -1; # not really... just means not specified
-    else
-
-      angle = posAngle(angle)
-      useSTRANS = true
-    end
-    if useSTRANS
-      data = reflect.to_s + '0' * 15; ## 16 'bit' string
+    if angle || mag || reflect
+      data = (reflect ? '1' : '0') + '0' * 15; ## 16 'bit' string
       printGds2Record(type: 'STRANS', data: data)
-      printGds2Record(type: 'MAG', data: mag) if mag
-      printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
+      printMag(num: mag) if mag
+      printAngle(num: angle) if angle
     end
-    xyTmp = []; # #don't pollute array passed in
-    xy.each do |xyi| ## e.g. 3.4 in -> 3400 out
-      xyTmp << snap_int(xyi)
-    end
-    printGds2Record(type: 'XY', data: xyTmp)
+    printGds2Record(type: 'XY', data: xy.map {|c| snap_int(c) })
     printGds2Record(type: 'ENDEL')
   end
 
@@ -1034,17 +1004,17 @@ class GDS2
   #
   #   usage:
   #     gds2File.printAref(
-  #                     -name=>string,   ## Name of structure
-  #                     -columns=>#,     ## Default is 1
-  #                     -rows=>#,        ## Default is 1
+  #                     name: string,   ## Name of structure
+  #                     columns: #,     ## Default is 1
+  #                     rows: #,        ## Default is 1
   #
-  #                     -xy=>Array,    ## ref to array of reals
+  #                     xy: Array,    ## ref to array of reals
   #                       # -or-
-  #                     -xyInt=>Array, ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
+  #                     xyInt: Array, ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
   #
-  #                     -angle=>#.#,     ## (optional) Default is 0.0
-  #                     -mag=>#.#,       ## (optional) Default is 1.0
-  #                     -reflect=>0|1    ## (optional)
+  #                     angle: #.#,     ## (optional) Default is 0.0
+  #                     mag: #.#,       ## (optional) Default is 1.0
+  #                     reflect: 0|1    ## (optional)
   #                  );
   #
   #   note:
@@ -1059,10 +1029,10 @@ class GDS2
     resolution = @Resolution
     raise "printAref expects a sname string. Missing name: 'text'" unless name
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    ## $xyInt should be a reference to an array of internal GDS2 format integers
-    ## $xy should be a reference to an array of reals
+    ## xyInt should be a reference to an array of internal GDS2 format integers
+    ## xy should be a reference to an array of reals
     unless  xy || xyInt
-      raise "printAref expects an xy array reference. Missing -xy => \\\#{array}"
+      raise "printAref expects an xy array reference. Missing xy:  \\\#{array}"
     end
     if xyInt
       xy = xyInt
@@ -1124,22 +1094,22 @@ class GDS2
   #
   #   usage:
   #     gds2File.printText(
-  #                     -string=>string,
-  #                     -layer=>#,      ## Default is 0
-  #                     -textType=>#,   ## Default is 0
-  #                     -font=>#,       ## 0-3
+  #                     string: string,
+  #                     layer: #,      ## Default is 0
+  #                     textType: #,   ## Default is 0
+  #                     font: #,       ## 0-3
   #                     -top, or -middle, -bottom,     ##optional vertical presentation
   #                     -left, or -center, or -right,  ##optional horizontal presentation
   #
-  #                     -xy=>Array,     ## ref to array of reals
+  #                     xy: Array,     ## ref to array of reals
   #                       # -or-
-  #                     -xyInt=>Array,  ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
+  #                     xyInt: Array,  ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
   #
-  #                     -x=>#.#,          ## optional way of passing in x value
-  #                     -y=>#.#,          ## optional way of passing in y value
-  #                     -angle=>#.#,      ## (optional) Default is 0.0
-  #                     -mag=>#.#,        ## (optional) Default is 1.0
-  #                     -reflect=>#,      ## (optional) Default is 0
+  #                     x: #.#,          ## optional way of passing in x value
+  #                     y: #.#,          ## optional way of passing in y value
+  #                     angle: #.#,      ## (optional) Default is 0.0
+  #                     mag: #.#,        ## (optional) Default is 1.0
+  #                     reflect: #,      ## (optional) Default is 0
   #                  );
   #
   #   note:
@@ -1153,14 +1123,15 @@ class GDS2
 def printText(string: nil, layer: 0, textType: 0, font: nil,
               xy: nil, xyInt: nil,
               x: nil, y: nil,
-              angle: nil, mag: nil, reflect: nil
+              angle: nil, mag: nil, reflect: nil,
+              vertical: nil, horizontal: nil
              )
     useSTRANS = false
     raise "printText expects a string. Missing string: 'text'" unless string
     resolution = @Resolution
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    ## $xyInt should be a reference to an array of internal GDS2 format integers
-    ## $xy should be a reference to an array of reals
+    ## xyInt should be a reference to an array of internal GDS2 format integers
+    ## xy should be a reference to an array of reals
     if xyInt
       xy = xyInt
       resolution = 1
@@ -1170,10 +1141,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       x ||= xy[0]
       y ||= xy[1]
     end
-    
 
-    raise "printText expects a x coord. Missing -xy=>\#{array} or -x => 'num'" unless x
-    raise "printText expects a y coord. Missing -xy=>\#{array} or -y => 'num'" unless y
+    raise "printText expects a x coord. Missing xy: \#{array} or x:  'num'" unless x
+    raise "printText expects a y coord. Missing xy: \#{array} or y:  'num'" unless y
 
     x = snap_int(x)
     y = snap_int(y)
@@ -1184,39 +1154,27 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       reflect = 1
       useSTRANS = true
     end
+
     raise "Invalid font, must be in 0..3" unless (0..3).include?(font)
-    font = format('%02d', font)
 
-    vertical
-    top = arg['-top']
-    middle = arg['-middle']
-    bottom = arg['-bottom']
-    vertical = if top
-                 '00'
-               elsif bottom
-                 '10'
-               else
-                 '01'
-               end ## middle
-    horizontal
-    left   = arg['-left']
-    center = arg['-center']
-    right  = arg['-right']
-    horizontal = if left; '00'
-                 elsif right; '10'
-                 else; '01'
-                 end ## center
-    presString = '0' * 10
-    presString += "#{font}#{vertical}#{horizontal}"
+    v_align = case vertical
+              when :top then '00'
+              when :bottom then '10'
+              else '01' # :middle
+              end
+    h_align = case horizontal
+              when :left then '00'
+              when :right then '10'
+              else '01' # :center
+              end
+    presString = '0' * 10 + format('%02d', font) + "#{v_align}#{h_align}"
 
-    #mag = arg['-mag']
     mag = if !mag || (mag <= 0)
             0
           else
-
             cleanFloatNum(mag)
           end
-    #angle = arg['-angle']
+
     angle = if !angle
 
               -1; # not really... just means not specified
@@ -1228,7 +1186,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     printGds2Record(type: 'TEXT')
     printGds2Record(type: 'LAYER', data: layer)
     printGds2Record(type: 'TEXTTYPE', data: textType)
-    printGds2Record(type: 'PRESENTATION', data: presString) if font || top || middle || bottom || bottom || left || center || right
+    printGds2Record(type: 'PRESENTATION', data: presString) if font || vertical || horizontal
     if useSTRANS
       data = reflect + '0' * 15; ## 16 'bit' string
       printGds2Record(type: 'STRANS', data: data)
@@ -1239,12 +1197,11 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     printGds2Record(type: 'STRING', data: string)
     printGds2Record(type: 'ENDEL')
   end
-  ############################################################################
 
-  # = Low Level Generic Write Methods
-  #
-
-  ############################################################################
+############################################################################
+# = Low Level Generic Write Methods
+#
+############################################################################
 
   # ==  saveGds2Record() - low level method to create a gds2 record given record type
   #   and data (if required). Data of more than one item should be given as a list.
@@ -1254,26 +1211,23 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #   usage:
   #     saveGds2Record(
   #             type: string,
-  #             -data=>data_If_Needed, ##optional for some types
-  #             -scale=>#.#,           ##optional number to scale data to. I.E -scale=>0.5 #default is NOT to scale
-  #             -snap=>#.#,            ##optional number to snap data to I.E. -snap=>0.005 #default is 1 resolution unit, typically 0.001
+  #             data: data_If_Needed, ##optional for some types
+  #             scale: #.#,           ##optional number to scale data to. I.E scale: 0.5 #default is NOT to scale
+  #             snap: #.#,            ##optional number to snap data to I.E. snap: 0.005 #default is 1 resolution unit, typically 0.001
   #     );
   #
   #   examples:
-  #     gds2File = GDS2.new(-fileName => ">$fileName");
-#     record = gds2File.saveGds2Record(type: 'header',-data=>3);
-  #     gds2FileOut.printGds2Record(type: 'record',-data=>$record);
+  #     gds2File = GDS2.new(fileName:  ">fileName");
+#     record = gds2File.saveGds2Record(type: 'header',data: 3);
+  #     gds2FileOut.printGds2Record(type: 'record',data: record);
   #
   #
 
   def saveGds2Record(data: nil, asciiData: nil, scale: 1, snap: nil)
     record = ''
 
-    if type
-      type = type.upcase
-    else
-      raise "saveGds2Record expects a type name. Missing type: 'name'"
-    end
+    raise "saveGds2Record expects a type name. Missing type: 'name'" unless type
+    type = type.upcase 
 
     saveEnd = $OUTPUT_RECORD_SEPARATOR
     $\ = ''
@@ -1283,30 +1237,20 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
     data = ''
     if type == 'RECORD' ## special case...
-      return data[0]
+      return data.first
     else
 
       numDataElements = 0
       resolution = @Resolution
-      
-      if scale <= 0
+      raise "saveGds2Record expects a positive scale scale:  #{scale}" if scale <= 0
 
-        raise "saveGds2Record expects a positive scale -scale => #{scale}"
-      end
-
-      snap = arg['-snap']
       snap = if !snap ## default is one resolution unit
-
                1
-
              else
-
                snap * resolution; ## i.e. 0.001 -> 1
              end
-      if snap < 1
-
-        raise "saveGds2Record expects a snap >= 1/resolution -snap => #{snap}"
-      end
+      
+      raise "saveGds2Record expects a snap >= 1/resolution snap: #{snap}" if snap < 1
 
       if (data[0]) && (data[0] != '')
 
@@ -1322,7 +1266,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
         end
       end
 
-      recordDataType = recordtypedata[type]
+      recordDataType = RECORDTYPEDATA[type]
       if asciiData
         dataString = asciiData.strip
         dataString.gsub!(/\s+/, ' ') if dataString !~ /'/; ## don't compress spaces in strings...
@@ -1363,7 +1307,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
       recordLength = [(length + 4)].pack 'S' # 1 2 bytes for length 3rd for recordType 4th for dataType
       record += recordLength
-      recordType = RECORDTYPENUMBERS[type].pack 'C'
+      recordType = RECORDTYPENUMBERS[type].pack('C')
       record += recordType
 
       dataType = RECORDTYPEDATA[type].pack 'C'
@@ -1442,33 +1386,33 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #   usage:
   #     printGds2Record(
   #             type: string,
-  #             -data=>data_If_Needed, ##optional for some types
-  #             -scale=>#.#,           ##optional number to scale data to. I.E -scale=>0.5 #default is NOT to scale
-  #             -snap=>#.#,            ##optional number to snap data to I.E. -snap=>0.005 #default is 1 resolution unit, typically 0.001
+  #             data: data_If_Needed, ##optional for some types
+  #             scale: #.#,           ##optional number to scale data to. I.E scale: 0.5 #default is NOT to scale
+  #             snap: #.#,            ##optional number to snap data to I.E. snap: 0.005 #default is 1 resolution unit, typically 0.001
   #     );
   #
   #   examples:
-  #     gds2File = new GDS2(-fileName => ">$fileName");
+  #     gds2File = GDS2.new(fileName: ">fileName");
   #
-  #     gds2File.printGds2Record(type: 'header',-data=>3);
-  #     gds2File.printGds2Record(type: 'bgnlib',-data=>[99,12,1,22,33,0,99,12,1,22,33,9]);
-  #     gds2File.printGds2Record(type: 'libname',-data=>"testlib");
-  #     gds2File.printGds2Record(type: 'units',-data=>[0.001, 1e-9]);
-  #     gds2File.printGds2Record(type: 'bgnstr',-data=>[99,12,1,22,33,0,99,12,1,22,33,9]);
+  #     gds2File.printGds2Record(type: 'header',data: 3);
+  #     gds2File.printGds2Record(type: 'bgnlib',data: [99,12,1,22,33,0,99,12,1,22,33,9]);
+  #     gds2File.printGds2Record(type: 'libname',data: "testlib");
+  #     gds2File.printGds2Record(type: 'units',data: [0.001, 1e-9]);
+  #     gds2File.printGds2Record(type: 'bgnstr',data: [99,12,1,22,33,0,99,12,1,22,33,9]);
   #     ...
   #     gds2File.printGds2Record(type: 'endstr');
   #     gds2File.printGds2Record(type: 'endlib');
   #
   #   Note: the special record type of 'record' can be used to copy a complete record
   #   just read in:
-  #     while ($record = gds2FileIn.readGds2Record())
+  #     while (record = gds2FileIn.readGds2Record())
   #     {
-  #         gds2FileOut.printGds2Record(type: 'record',-data=>$record);
-  #     }
+  #         gds2FileOut.printGds2Record(type: 'record',data: record);
+  #     end
   #
 
   def printGds2Record(type: nil, data: nil, asciiData: nil, snap: nil, scale: 1)
-    p [:prec, type, data]
+    #p [:prec, type, data]
     raise "printGds2Record expects a type name. Missing type: 'name'" unless type
     type = type.upcase
 
@@ -1486,23 +1430,23 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       if GDS2.isLittleEndian
 
         length = data[0][0..1]
-        recordLength = length.unpack('v').first
+        recordLength = length.unpack1('v')
         @BytesDone += recordLength
         length = length.reverse
         fh.print(length)
 
         recordType = data[0][2]
         fh.print(recordType)
-        recordType = recordType.unpack('C').first
+        recordType = recordType.unpack1('C')
         type = RECORDTYPESTRINGS[recordType]; ## will use code below.....
 
         dataType = data[0][3]
         fh.print(dataType)
-        dataType = dataType.unpack('C').first
+        dataType = dataType.unpack1('C')
         if recordLength > 4
 
           lengthLeft = recordLength - 4; ## length left
-          recordDataType = recordtypedata[type]
+          recordDataType = RECORDTYPEDATA[type]
 
           if (recordDataType == INTEGER_2) || (recordDataType == BIT_ARRAY)
 
@@ -1512,19 +1456,19 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
             byteInt2String = nil
             byte2 = nil
             (0..lengthLeft / 2 - 1).each do |_i|
-              byteInt2String = reverse(substr(intData, 0, 16, ''))
-              byte2 = pack 'B16', reverse(byteInt2String)
+              byteInt2String = substr(intData, 0, 16, '').reverse
+              byte2 = byteInt2String.reverse.pack('B16') 
               fh.print(byte2)
             end
 
           elsif recordDataType == INTEGER_4
 
-            binData = unpack 'b*', data[0]
+            binData = data[0].unpack('b*')
             intData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
             # (byteInt4String,byte4)
             (0..lengthLeft / 4 - 1).each do |_i|
-              byteInt4String = reverse(substr(intData, 0, 32, ''))
-              byte4 = pack 'B32', reverse(byteInt4String)
+              byteInt4String = (substr(intData, 0, 32, '')).reverse
+              byte4 = byteInt4String.reverse.pack('B32')
               fh.print byte4
             end
 
@@ -1561,13 +1505,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
         @BytesDone += recordLength
       end
 
-    else # if ($type ne 'RECORD')
+    else # if (type ne 'RECORD')
 
       numDataElements = 0
       resolution = @Resolution
       uUnits = @UUnits
 
-      raise "printGds2Record expects a positive scale -scale => #{scale}" if scale <= 0
+      raise "printGds2Record expects a positive scale scale:  #{scale}" if scale <= 0
       
       snap = if !snap ## default is one resolution unit
                1
@@ -1575,7 +1519,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
                int((snap * resolution) + GDS2::g_epsilon); ## i.e. 0.001 -> 1
              end
 
-      raise "printGds2Record expects a snap >= 1/resolution -snap => #{snap}" if snap < 1
+      raise "printGds2Record expects a snap >= 1/resolution snap:  #{snap}" if snap < 1
 
       unless data.is_a? Array
         data = [data]
@@ -1649,15 +1593,14 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       dataType = [RECORDTYPEDATA[type]].pack 'C'
       dataType = dataType.reverse if GDS2.isLittleEndian
       fh.print(dataType)
-      #p [:xx, data]
+
       if recordDataType == BIT_ARRAY      ## bit array
         bitLength = length * 8
         value = data.pack("B#{bitLength}")
         fh.print(value)
 
       elsif recordDataType == INTEGER_2   ## 2 byte signed integer
-        p data
-        # value
+        # (value)
         data.each do |num|
           value = [num].pack('s')
           value = value.reverse if GDS2.isLittleEndian
@@ -1665,8 +1608,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
         end
 
       elsif recordDataType == INTEGER_4 ## 4 byte signed integer
-
-        # value
+        # (value)
         data.each do |num|
           num = scaleNum(num, scale) if scale != 1
           num = snapNum(num, snap) if snap != 1
@@ -1676,10 +1618,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
         end
 
       elsif recordDataType == REAL_8 ## 8 byte real
-
         # (real,negative,exponent,value)
-        p [:realdata, data]
         data.each do |num|
+          #p [:realdata, num]
           num = num.to_f
           real = num
           negative = false
@@ -1689,15 +1630,18 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
           end
 
           exponent = 0
+          
           while real >= 1.0
             exponent += 1
             real = (real / 16.0)
+            #p [:realexh, real, exponent]
           end
 
           if real != 0
             while real < 0.0625
-              --exponent
+              exponent -= 1
               real = (real * 16.0)
+              #p [:realexl, real, exponent]
             end
           end
 
@@ -1705,7 +1649,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
           value = [exponent].pack('C')
           value = value.reverse if GDS2.isLittleEndian
           fh.print(value)
-          dbgstr = [:exp, value.ord]
+          #dbgstr = [:exp, value.ord]
           (1..7).each do |i|
             byte = if real >= 0
                      (real * 256.0) + GDS2::g_epsilon
@@ -1715,15 +1659,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
             value = [byte.to_i].pack('C')
             value = value.reverse if GDS2.isLittleEndian
             fh.print(value)
-            dbgstr << [i, value.ord, value, real]
-
-            real = real * 256.0 - (byte + 0.0)
+            #dbgstr << [i, value.ord, value, real, byte]
+            real = real * 256.0 - (byte.to_i)
           end
-          pp dbgstr
+          #pp dbgstr
         end
 
       elsif recordDataType == ASCII_STRING ## ascii string (null padded)
-        #p [:asciiData, data, [data].pack("a*"), length]
         fh.print([data].pack("a#{length}"))
       end
     end
@@ -1736,22 +1678,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
   #   usage:
   #     gds2File.printRecord(
-  #                   -data => $record
+  #                   data:  record
   #                 );
   #
 
-  def printRecord(*arg)
-    record = arg['-data']
-    unless record
-
-      raise "printGds2Record expects a data record. Missing -data => \#{record}"
-    end
-    type = arg['-type']
-    if  type
-
-      raise 'printRecord does not take -type. Perhaps you meant to use printGds2Record?'
-    end
-    printGds2Record(type: 'record', data: record)
+  def printRecord(data: nil)
+    raise "printGds2Record expects a data record. Missing data: record" unless data
+    printGds2Record(type: 'record', data: data)
   end
   ############################################################################
 
@@ -1766,12 +1699,10 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
   #   usage:
   #   while (gds2File.readGds2Record)
-  #   {
   #       if (gds2File.returnRecordTypeString eq 'LAYER')
-  #       {
-  #           $layersFound[gds2File.layer] = 1;
-  #       }
-  #   }
+  #           layersFound[gds2File.layer] = 1;
+  #       end
+  #   end
   #
 
   def readGds2Record
@@ -1793,9 +1724,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #       if (gds2File.returnRecordTypeString eq 'LAYER')
   #       {
   #           gds2File.readGds2RecordData;
-  #           $layersFound[gds2File.returnLayer] = 1;
-  #       }
-  #   }
+  #           layersFound[gds2File.returnLayer] = 1;
+  #       end
+  #   end
   #
 
   def readGds2RecordHeader
@@ -1810,21 +1741,21 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     buffer = ''
     return false unless buffer = @FileHandle.read(4)
 
-    # if (read($self.{'FileHandle'},$data,2)) ### length
+    # if (read(self.{'FileHandle'},data,2)) ### length
     data = buffer[0..1]
     begin
       data = data.reverse if GDS2.isLittleEndian
       @Record = data
-      @Length = data.unpack('S').first
+      @Length = data.unpack1('S')
       @BytesDone += @Length
     end
 
-    # if (read($self.{'FileHandle'},$data,1)) ## record type
+    # if (read(self.{'FileHandle'},data,1)) ## record type
     data = buffer[2]
     begin
       data = data.reverse if GDS2.isLittleEndian
       @Record += data
-      @RecordType = data.unpack('C').first
+      @RecordType = data.unpack1('C')
       @EOLIB = true if @RecordType == ENDLIB
 
       if @UsingPrettyPrint
@@ -1846,12 +1777,12 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       end
     end
 
-    # if (read($self.{'FileHandle'},$data,1)) ## data type
+    # if (read(self.{'FileHandle'},data,1)) ## data type
     data = buffer[3]
     begin
       data = data.reverse if GDS2.isLittleEndian
       @Record += data
-      @DataType = data.unpack('C').first
+      @DataType = data.unpack1('C')
     end
     # printf("P:Length=%-5d RecordType=%-2d DataType=%-2d DataIndex=%-2d\n",@Length,@RecordType,@DataType,@DataIndex); ##DEBUG
     # print "INFO: DONE READING HEADER\n";
@@ -1864,13 +1795,11 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #   slightly faster if you just want a certain thing...
   #   usage:
   #   while (gds2File.readGds2RecordHeader)
-  #   {
   #       if (gds2File.returnRecordTypeString eq 'LAYER')
-  #       {
   #           gds2File.readGds2RecordData;
-  #           $layersFound[gds2File.returnLayer] = 1;
-  #       }
-  #   }
+  #           layersFound[gds2File.returnLayer] = 1;
+  #       end
+  #   end
   #
 
   def readGds2RecordData
@@ -2067,7 +1996,6 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
           string += ' fx' if bitString =~ /^1/
           if inText && (@RecordType != STRANS)
-
             string += ' f'
             string += '0' if bitString =~ /00....$/
             string += '1' if bitString =~ /01....$/
@@ -2089,16 +2017,16 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       elsif @DataType == INTEGER_2
 
         if compact
-          if dateFld
+          if dateFld > 0
             num = @RecordData[i]
-            if dateFld =~ /^[17]$/
-              if dateFld == '1'
+            if [1,7].include? dateFld
+              if dateFld == 1
                 string += if recordType == 'BGNLIB'
                             'm='
                           else
                             'c='
                           end
-              elsif dateFld == '7'
+              elsif dateFld == 7
                 string += if recordType == 'BGNLIB'
                             ' a='
                           else
@@ -2108,14 +2036,15 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
               num += 1900 if num < 1900
             end
             num = format('%02d', num)
-            string += '-' if dateFld =~ /^[2389]/
-            string += ':' if dateFld =~ /^[56]/
-            string += ':' if dateFld =~ /^1[12]/
-            string += ' ' if (dateFld == '4') || (dateFld == '10')
+            string += '-' if [2,3,8,9].include?(dateFld)
+            string += ':' if [5,6].include?(dateFld)
+            string += ':' if [11,12].include?(dateFld)
+            string += ' ' if [4,10].include?(dateFld)
             string += num
           else
+
             string += ' ' unless string =~ / (a|m|pt|dt|tt)$/i
-            string += @RecordData[i]
+            string += @RecordData[i].to_s
           end
 
         else
@@ -2127,17 +2056,19 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
           string.sub!(/(\d)\.e/, '\\1e'); ## perl on Cygwin prints "1.e-9" others "1e-9"
           string.sub!(/(\d)e\-0+/, '\\1e-'); ## different perls print 1e-9 1e-09 1e-009 etc... standardize to 1e-9
         end
-
+        p [:int2, @RecordData[i], @RecordData[i].to_s, dateFld, string]
+        
       elsif @DataType == INTEGER_4
 
         if compact
-          string += ' ' if i
+          string += ' ' if i>0
         else
           string += '  '
         end
 
         string += cleanFloatNum(@RecordData[i] * @UUnits).to_s
-        if compact && i && (i == @RecordData.size)
+        
+        if compact && i>0 && (i == @RecordData.size-1)
           string.sub!(/ +[\d\.\-]+ +[\d\.\-]+$/, '') if inBoundary; # remove last point
           string += ')'
         end
@@ -2169,12 +2100,11 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       end
 
       i += 1
-      dateFld += 1 if dateFld
+      dateFld += 1 if dateFld > 0
     end
 
     if compact
-      g_gdtstring = '' # G_GDTSTRING
-      g_gdtstring += string
+      g_gdtstring = string.dup
       if (g_gdtstring =~ /}$/ || g_gdtstring =~ /^(gds2|lib|m).*\d$/) || (g_gdtstring =~ /^cell.*'$/)
 
         string = "#{g_gdtstring}\n"
@@ -2184,7 +2114,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
       else
 
-        string = ''
+        #string = ''
       end
     end
 
@@ -2196,9 +2126,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
   #   usage:
   #     gds2File.returnXyAsArray(
-  #                     -asInteger => 0|1    ## (optional) default is true. Return integer
+  #                     asInteger:  0|1    ## (optional) default is true. Return integer
   #                                          ## array or if false return array of reals.
-  #                     -withClosure => 0|1  ## (optional) default is true. Whether to
+  #                     withClosure:  0|1  ## (optional) default is true. Whether to
   #                                          ##return a rectangle with 5 or 4 points.
   #                );
   #
@@ -2238,11 +2168,10 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #   usage:
   #   #!/usr/local/bin/perl
   #   require 'gds2'
-  #   gds2File = new GDS2(-fileName=>"test.gds");
+  #   gds2File = GDS2.new(fileName: "test.gds");
   #   while (gds2File.readGds2Record)
-  #   {
   #       print gds2File.returnRecordAsPerl;
-  #   }
+  #   end
   #
 
   def returnRecordAsPerl (*arg)
@@ -2332,14 +2261,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   def printAngle(num: nil)
     printGds2Record(type: 'ANGLE', data: posAngle(num)) if num
   end
-  ############################################################################
 
+  ############################################################################
   # == printAttrtable - prints ATTRTABLE record
   #
   #   usage:
-  #     gds2File.printAttrtable(string: $string);
+  #     gds2File.printAttrtable(string: string);
   #
-
   def printAttrtable(string: nil)
     raise "printAttrtable expects a string. Missing string: 'text'" unless string
     printGds2Record(type: 'ATTRTABLE', data: string)
@@ -2387,7 +2315,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printBoxtype - prints BOXTYPE record
   #
   #   usage:
-  #     gds2File.printBoxtype(-num=>#);
+  #     gds2File.printBoxtype(num: #);
   #
 
   def printBoxtype(num: nil)
@@ -2399,7 +2327,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printColrow - prints COLROW record
   #
   #   usage:
-  #     gds2File.printBoxtype(-columns=>#, -rows=>#);
+  #     gds2File.printBoxtype(columns: #, rows: #);
   #
 
   def printColrow(columns: 1, rows: 1)
@@ -2410,7 +2338,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printDatatype - prints DATATYPE record
   #
   #   usage:
-  #     gds2File.printDatatype(-num=>#);
+  #     gds2File.printDatatype(num: #);
   #
 
   def printDatatype(num: 0)
@@ -2419,7 +2347,6 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   ############################################################################
 
   def printEflags
-    # self =shift
     raise 'EFLAGS type not supported'
   end
   ############################################################################
@@ -2427,7 +2354,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printElkey - prints ELKEY record
   #
   #   usage:
-  #     gds2File.printElkey(-num=>#);
+  #     gds2File.printElkey(num: #);
   #
 
   def printElkey(num: nil)
@@ -2447,7 +2374,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printEndextn - prints path end extension record
   #
   #   usage:
-  #     gds2File printEndextn.(-num=>#.#);
+  #     gds2File.printEndextn(num: #.#)
   #
 
   def printEndextn(num: nil)
@@ -2517,8 +2444,8 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #                   num: #  ## optional, defaults to 0.
   #                 );
   #
-  def printLayer(num: 0)
-    printGds2Record(type: 'LAYER', data: layer)
+  def printLayer (num: 0)
+    printGds2Record(type: 'LAYER', data: num)
   end
 
   ############################################################################
@@ -2530,7 +2457,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printLibname - Prints library name
   #
   #   usage:
-  #     printLibname(-name=>$name);
+  #     printLibname(name: name);
   #
   def printLibname(name: nil)
     raise "printLibname expects a library name. Missing name: 'name'"    unless name
@@ -2564,10 +2491,8 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #                 );
   #
 
-  def printPathtype(num: nil)
-    pathType = num
-    pathType ||= 0
-    printGds2Record(type: 'PATHTYPE', data: pathType) if pathType
+  def printPathtype(num: 0)
+    printGds2Record(type: 'PATHTYPE', data: num) if num != 0
   end
   ############################################################################
 
@@ -2582,8 +2507,8 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   def printMag(num: nil)
     mag = num
     mag = 0 if !mag || (mag <= 0)
-    mag = cleanFloatNum(mag)
-    printGds2Record(type: 'MAG', data: mag) if mag
+    mag = cleanFloatNum(mag).to_f
+    printGds2Record(type: 'MAG', data: mag) if num
   end
 
   ############################################################################
@@ -2621,7 +2546,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
   #   usage:
   #     gds2File.printPresentation(
-  #                   -font => #,  ##optional, defaults to 0, valid numbers are 0-3
+  #                   font:  #,  ##optional, defaults to 0, valid numbers are 0-3
   #                   -top, ||-middle, || -bottom, ## vertical justification
   #                   -left, ||-center, || -right, ## horizontal justification
   #                 );
@@ -2671,7 +2596,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printPropvalue - prints a property value string
   #
   #   usage:
-  #     gds2File.printPropvalue( string: $string );
+  #     gds2File.printPropvalue( string: string );
   #
 
   def printPropvalue(string: nil)
@@ -2695,7 +2620,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printSname - prints a SNAME string
   #
   #   usage:
-  #     gds2File.printSname( name: $cellName );
+  #     gds2File.printSname( name: cellName );
   #
 
   def printSname(name: nil)
@@ -2743,7 +2668,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printString - prints a STRING record
   #
   #   usage:
-  #     gds2File.printSname( string: $text );
+  #     gds2File.printSname( string: text );
   #
 
   def printString (string: nil)
@@ -2755,7 +2680,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printStrname - prints a structure name string
   #
   #   usage:
-  #     gds2File.printStrname( name: $cellName );
+  #     gds2File.printStrname( name: cellName );
   #
 
   def printStrname(name: nil)
@@ -2808,32 +2733,23 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   def printUinteger
     raise NotImplementedError, 'UINTEGER type not supported'
   end
-  ############################################################################
 
+  ############################################################################
   # == printUnits - Prints units record.
   #
   #   options:
-  #     -uUnit   => real number ## (optional) default is 0.001
-  #     -dbUnit  => real number ## (optional) default is 1e-9
+  #     uUnit:  Float ## (optional) default is 0.001
+  #     dbUnit: Float ## (optional) default is 1e-9
   #
 
-  def printUnits(*arg)
-    uUnit = arg['-uUnit']
+  def printUnits(uUnit: nil, dbUnit: 1e-9)
     if !uUnit
-
       uUnit = 0.001
-
     else
-
       @Resolution = (1 / uUnit); ## default is 1000 - already set in new()
     end
     @UUnits = uUnit
-    #################################################
-    dbUnit = arg['-dbUnit']
-    dbUnit ||= 1e-9
     @DBUnits = dbUnit
-    #################################################
-
     printGds2Record(type: 'UNITS', data: [uUnit, dbUnit])
   end
   ############################################################################
@@ -2841,8 +2757,8 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   def printUstring
     raise NotImplementedError, 'USTRING type not supported'
   end
-  ############################################################################
 
+  ############################################################################
   # == printWidth - prints a width number
   #
   #   usage:
@@ -2850,30 +2766,31 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printWidth(num: 0)
+    raise "printWidth num must be greater than zero" if num <= 0
     width = num
     width = 0 if !width || width <= 0
-    printGds2Record(type: 'WIDTH', data: width) if width
+    printGds2Record(type: 'WIDTH', data: num) if num != 0
   end
   ############################################################################
 
   # == printXy - prints an XY array
   #
   #   usage:
-  #     gds2File.printXy( -xyInt => ArrayGds2Ints );
+  #     gds2File.printXy(xyInt:  ArrayGds2Ints );
   #     -or-
-  #     gds2File.printXy( -xy => ArrayReals );
+  #     gds2File.printXy(xy:  ArrayReals );
   #
   #     -xyInt most useful if reading and modifying... -xy if creating from scratch
   #
 
   def printXy(*arg)
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
-    xyInt = arg['-xyInt']; ## $xyInt should be a reference to an array of internal GDS2 format integers
-    xy = arg['-xy']; ## $xy should be a reference to an array of reals
+    xyInt = arg['-xyInt']; ## xyInt should be a reference to an array of internal GDS2 format integers
+    xy = arg['-xy']; ## xy should be a reference to an array of reals
     resolution = @Resolution
     unless xy || xyInt
 
-      raise "printXy expects an xy array reference. Missing -xy => \\\#{array}"
+      raise "printXy expects an xy array reference. Missing xy: Array"
     end
     if xyInt
 
@@ -2894,7 +2811,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == returnFilePosition - return current byte position (NOT zero based)
   #
   #   usage:
-  #     $position = gds2File.returnFilePosition;
+  #     position = gds2File.returnFilePosition;
   #
 
   def returnFilePosition
@@ -2921,7 +2838,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == returnDatatype - returns datatype # if record is DATATYPE else returns -1
   #
   #   usage:
-  #     $dataTypesFound[gds2File.returnDatatype] = 1;
+  #     dataTypesFound[gds2File.returnDatatype] = 1;
   #
 
   def returnDatatype
@@ -2944,7 +2861,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == returnLayer - returns layer # if record is LAYER else returns -1
   #
   #   usage:
-  #     $layersFound[gds2File.returnLayer] = 1;
+  #     layersFound[gds2File.returnLayer] = 1;
   #
 
   def returnLayer
@@ -3008,7 +2925,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == returnTexttype - returns texttype # if record is TEXTTYPE else returns -1
   #
   #   usage:
-  #     $TextTypesFound[gds2File.returnTexttype] = 1;
+  #     TextTypesFound[gds2File.returnTexttype] = 1;
   #
   def returnTexttype
     ## 2 byte signed integer
@@ -3536,7 +3453,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     @INHEADER = false
     @INDATA   = true; # in DATA - actually will be at the end of data by the time we test this...
     ## 4 should have been just read by readGds2RecordHeader
-    @FileHandle.seek(@Length - 4, SEEK_CUR); ## seek seems to run a little faster than read
+    @FileHandle.seek(@Length - 4, IO::SEEK_CUR); ## seek seems to run a little faster than read
     @DataIndex = UNKNOWN
     true
   end
@@ -3619,7 +3536,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == returnUnitsAsArray - return user units and database units as a 2 element array
   #
   #   usage:
-  #     ($uu,$dbu) = gds2File.returnUnitsAsArray;
+  #     (uu,dbu) = gds2File.returnUnitsAsArray;
   #
   #
 
