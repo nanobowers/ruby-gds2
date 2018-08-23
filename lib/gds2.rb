@@ -2,8 +2,6 @@ require 'pp'
 
 class GDS2
   VERSION = '3.35'
-  ## Note: '@ ( # )' used by the what command  E.g. what GDS2.pm
-  REVISION = '@(#) $Id: GDS2.pm,v $ $Revision: 3.35 $ $Date: 2017-10-04 03:27:57-06 $'
 
   #
   # = NAME
@@ -607,7 +605,7 @@ class GDS2
     @Length     = 0;         ## length of data
     @DataType   = UNKNOWN;   ## one of 7 gds datatypes
     @UUnits     = -1.0;      ## for gds2 file  e.g. 0.001
-    @DBUnits    = -1.0;      ## for gds2 file  e.g. 1e-9
+    @DBUnits    = -1.0;      ## for gdss2 file  e.g. 1e-9
     @Record     = '';        ## the whole record as found in gds2 file
     @RecordType = UNKNOWN
     @DataIndex  = 0
@@ -701,7 +699,7 @@ class GDS2
   # To get this set uUnit to 0.001 (1/1000) and the dbUnit to 1/1000th of a micron (1e-9).
   #    usage:
   #      gds2File.printInitLib(name:  "testlib",  ## required
-  #                                isoDate:  0|1         ## (optional) use ISO 4 digit date 2001 vs 101
+  #                                isoDate:  true|false         ## (optional) use ISO 4 digit date 2001 vs 101
   #                                uUnit:  Float ## (optional) default is 0.001
   #                                dbUnit:  Float ## (optional) default is 1e-9
   #                               );
@@ -824,7 +822,7 @@ class GDS2
     end
 
     if bgnExtn || endExtn  ## we have to convert
-
+      raise "XY set must have at least two xy pairs" unless xyTmp.size >= 4
       bgnX1 = xyTmp[0]
       bgnY1 = xyTmp[1]
       bgnX2 = xyTmp[2]
@@ -840,12 +838,12 @@ class GDS2
           if bgnY1 < bgnY2 ## points down
 
             xyTmp[1] -= bgnExtn
-            xyTmp[1] += int(width / 2) if pathType != 0
+            xyTmp[1] += (width / 2).to_i if pathType != 0
 
           else ## points up
 
             xyTmp[1] += bgnExtn
-            xyTmp[1] -= int(width / 2) if pathType != 0
+            xyTmp[1] -= (width / 2).to_i if pathType != 0
           end
 
         elsif bgnY1 == bgnY2 # horizontal ...modify 1st X
@@ -853,12 +851,12 @@ class GDS2
           if bgnX1 < bgnX2 ## points left
 
             xyTmp[0] -= bgnExtn
-            xyTmp[0] += int(width / 2) if pathType != 0
+            xyTmp[0] += (width / 2).to_i if pathType != 0
 
           else ## points up
 
             xyTmp[0] += bgnExtn
-            xyTmp[0] -= int(width / 2) if pathType != 0
+            xyTmp[0] -= (width / 2).to_i if pathType != 0
           end
         end
       end
@@ -963,7 +961,7 @@ class GDS2
   #
   #                     angle: #.#,     ## (optional) Default is 0.0
   #                     mag: #.#,       ## (optional) Default is 1.0
-  #                     reflect: 0|1    ## (optional)
+  #                     reflect: true|false    ## (optional)
   #                  );
   #
   #   note:
@@ -988,10 +986,8 @@ class GDS2
     end
     printGds2Record(type: 'SREF')
     printGds2Record(type: 'SNAME', data: name)
-
     if angle || mag || reflect
-      data = (reflect ? '1' : '0') + '0' * 15; ## 16 'bit' string
-      printGds2Record(type: 'STRANS', data: data)
+      printStrans(reflect: reflect)
       printMag(num: mag) if mag
       printAngle(num: angle) if angle
     end
@@ -1014,7 +1010,7 @@ class GDS2
   #
   #                     angle: #.#,     ## (optional) Default is 0.0
   #                     mag: #.#,       ## (optional) Default is 1.0
-  #                     reflect: 0|1    ## (optional)
+  #                     reflect: true|false    ## (optional)
   #                  );
   #
   #   note:
@@ -1098,18 +1094,18 @@ class GDS2
   #                     layer: #,      ## Default is 0
   #                     textType: #,   ## Default is 0
   #                     font: #,       ## 0-3
-  #                     -top, or -middle, -bottom,     ##optional vertical presentation
-  #                     -left, or -center, or -right,  ##optional horizontal presentation
+  #                     vertical: [:top, :middle, :bottom]  ## optional vertical presentation
+  #                     horizontal: [:left, :center, :right]  ## optional horizontal presentation
   #
   #                     xy: Array,     ## ref to array of reals
-  #                       # -or-
+  #                      -or-
   #                     xyInt: Array,  ## ref to array of internal ints (optional -wks better if you are modifying an existing GDS2 file)
   #
   #                     x: #.#,          ## optional way of passing in x value
   #                     y: #.#,          ## optional way of passing in y value
   #                     angle: #.#,      ## (optional) Default is 0.0
   #                     mag: #.#,        ## (optional) Default is 1.0
-  #                     reflect: #,      ## (optional) Default is 0
+  #                     reflect:         ## true/false/nil
   #                  );
   #
   #   note:
@@ -1126,7 +1122,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
               angle: nil, mag: nil, reflect: nil,
               vertical: nil, horizontal: nil
              )
-    useSTRANS = false
+    #useSTRANS = false
     raise "printText expects a string. Missing string: 'text'" unless string
     resolution = @Resolution
     #### -xyInt most useful if reading and modifying... -xy if creating from scratch
@@ -1148,13 +1144,6 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     x = snap_int(x)
     y = snap_int(y)
 
-    if !reflect || (reflect <= 0)
-      reflect = 0
-    else
-      reflect = 1
-      useSTRANS = true
-    end
-
     raise "Invalid font, must be in 0..3" unless (0..3).include?(font)
 
     v_align = case vertical
@@ -1167,32 +1156,17 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
               when :right then '10'
               else '01' # :center
               end
-    presString = '0' * 10 + format('%02d', font) + "#{v_align}#{h_align}"
+    presString = '0' * 10 + format('%02d', font.to_s(2)) + "#{v_align}#{h_align}"
 
-    mag = if !mag || (mag <= 0)
-            0
-          else
-            cleanFloatNum(mag)
-          end
-
-    angle = if !angle
-
-              -1; # not really... just means not specified
-
-            else
-
-              posAngle(angle)
-            end
     printGds2Record(type: 'TEXT')
     printGds2Record(type: 'LAYER', data: layer)
     printGds2Record(type: 'TEXTTYPE', data: textType)
     printGds2Record(type: 'PRESENTATION', data: presString) if font || vertical || horizontal
-    if useSTRANS
-      data = reflect + '0' * 15; ## 16 'bit' string
-      printGds2Record(type: 'STRANS', data: data)
+    if angle || mag || reflect
+      printStrans(reflect: reflect)
+      printMag(num: mag) if mag
+      printAngle(num: angle) if angle
     end
-    printGds2Record(type: 'MAG', data: mag) if mag
-    printGds2Record(type: 'ANGLE', data: angle) if angle >= 0
     printGds2Record(type: 'XY', data: [x, y])
     printGds2Record(type: 'STRING', data: string)
     printGds2Record(type: 'ENDEL')
@@ -1223,7 +1197,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
   #
 
-  def saveGds2Record(data: nil, asciiData: nil, scale: 1, snap: nil)
+  def saveGds2Record(type: nil, data: nil, asciiData: nil, scale: 1, snap: nil)
     record = ''
 
     raise "saveGds2Record expects a type name. Missing type: 'name'" unless type
@@ -1235,7 +1209,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     dataString = asciiData
     raise 'saveGds2Record can not handle both -data and -asciiData options' if asciiData && data
 
-    data = ''
+    #data = ''
     if type == 'RECORD' ## special case...
       return data.first
     else
@@ -1252,20 +1226,20 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       
       raise "saveGds2Record expects a snap >= 1/resolution snap: #{snap}" if snap < 1
 
-      if (data[0]) && (data[0] != '')
-
-        data = data[0]
-        numDataElements = @data
-        if numDataElements ## passed in anonymous array
-
-          data = @data; ## deref
-
-        else
-
-          numDataElements = data
-        end
+      #if (data[0]) && (data[0] != '')
+      #  data = data[0]
+      #  numDataElements = @data.size
+      #  if numDataElements ## passed in anonymous array
+      #    data = @data; ## deref
+      #  else
+      #    numDataElements = data.size
+      #  end
+      #end
+      unless data.is_a? Array
+        data = [data]
       end
-
+      numDataElements = data.size
+      
       recordDataType = RECORDTYPEDATA[type]
       if asciiData
         dataString = asciiData.strip
@@ -1278,18 +1252,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
           dataString.gsub!(/\s*[\s,;:\/\\]+\s*/, ' '); ## incase commas etc... (non-std) were added by hand
           data = split(' ', dataString)
-          numDataElements = data
+          numDataElements = data.size
           if recordDataType == INTEGER_4
-
-            xyTmp = []
-            (0..numDataElements - 1).each do |i|
-              xyTmp << snap_int(data[i])
-            end
-            data = xyTmp
+            data = data.map { |d| snap_int(d) }
           end
         end
     end
-    
+      
       byte = nil 
       length = 0
       if recordDataType == BIT_ARRAY
@@ -1307,10 +1276,10 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
       recordLength = [(length + 4)].pack 'S' # 1 2 bytes for length 3rd for recordType 4th for dataType
       record += recordLength
-      recordType = RECORDTYPENUMBERS[type].pack('C')
+      recordType = [RECORDTYPENUMBERS[type]].pack('C')
       record += recordType
 
-      dataType = RECORDTYPEDATA[type].pack 'C'
+      dataType = [RECORDTYPEDATA[type]].pack 'C'
       record += dataType
 
       if recordDataType == BIT_ARRAY      ## bit array
@@ -1362,9 +1331,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
           (1..7).each do |_i|
             byte = if real >= 0
-                     int((real * 256.0) + GDS2::g_epsilon)
+                     ((real * 256.0) + GDS2::g_epsilon).to_i
                    else
-                     int((real * 256.0) - GDS2::g_epsilon)
+                     ((real * 256.0) - GDS2::g_epsilon).to_i
                    end
             record += [byte].pack('C')
             real = real * 256.0 - (byte + 0.0)
@@ -1426,16 +1395,23 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     data = [] unless data
     recordLength = nil ## 1st 2 bytes for length 3rd for recordType 4th for dataType
     if type == 'RECORD' ## special case...
+
+      unless data.is_a? Array
+        data = [data]  # box as an Array
+      end
       
       if GDS2.isLittleEndian
-
+        p ["ile", data]
         length = data[0][0..1]
-        recordLength = length.unpack1('v')
+        #p length.ord
+        #recordLength = length.unpack1('v')
+        recordLength = length.ord
         @BytesDone += recordLength
         length = length.reverse
         fh.print(length)
 
         recordType = data[0][2]
+        p [:rt, data]
         fh.print(recordType)
         recordType = recordType.unpack1('C')
         type = RECORDTYPESTRINGS[recordType]; ## will use code below.....
@@ -1474,16 +1450,16 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
           elsif recordDataType == REAL_8
 
-            binData = unpack 'b*', data[0]
-            realData = substr(binData, 32); # skip 1st 4 bytes (length, recordType dataType)
+            binData = data[0].unpack1('b*')
+            realData = binData[32..-1]# skip 1st 4 bytes (length, recordType dataType)
             # (bit64String,mantissa,byteString,byte)
             (0..lengthLeft / 8 - 1).each do |i|
-              bit64String = substr(realData, (i * 64), 64)
-              fh.print(pack('b8', bit64String))
-              mantissa = substr(bit64String, 8, 56)
+              bit64String = realData[i*64..i*64+64] # substr(realData, (i * 64), 64)
+              fh.print [bit64String].pack('b8')
+              mantissa = bit64String[8..64] # substr(bit64String, 8, 56)
               (0..6).each do |j|
-                byteString = substr(mantissa, (j * 8), 8)
-                byte = pack 'b8', byteString
+                byteString = mantissa[j*8,j*8+8] # substr(mantissa, (j * 8), 8)
+                byte = [byteString].pack 'b8'
                 fh.print(byte)
               end
             end
@@ -1505,7 +1481,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
         @BytesDone += recordLength
       end
 
-    else # if (type ne 'RECORD')
+    else # if (type != 'RECORD')
 
       numDataElements = 0
       resolution = @Resolution
@@ -1522,7 +1498,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       raise "printGds2Record expects a snap >= 1/resolution snap:  #{snap}" if snap < 1
 
       unless data.is_a? Array
-        data = [data]
+        data = [data]  # box as an Array
       end
       
       #  data = data[0]
@@ -1547,14 +1523,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
           dataString.gsub!(/\s*[\s,;:\/\\]+\s*/, ' '); ## in case commas etc... (non-std) were added by hand
           data = dataString.split(' ')
-          numDataElements = data
+          numDataElements = data.size
           if recordDataType == INTEGER_4
-
-            xyTmp = []
-            (0..numDataElements - 1).each do |i| ## e.g. 3.4 in -> 3400 out
-              xyTmp << snap_int(data[i])
-            end
-            data = xyTmp
+            data = data.map { |d| snap_int(d) }
           end
         end
       end
@@ -1573,7 +1544,6 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
         data = data.first
         slen = data.length
         length = slen + (slen % 2); ## needs to be an even number
-        #p [:strlencompute, data, slen, length]
       end
       @BytesDone += length
       #p [:datax, data, numDataElements, recordDataType]
@@ -1986,11 +1956,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
       # puts "INFO: #{@DataIndex} #{@DataType}"
       if @DataType == BIT_ARRAY
 
-        bitString = @RecordData[i]
+        bitString = @RecordData[i].first
         if GDS2.isLittleEndian
-
-          bitString =~ /(........)(........)/
-          bitString = "#{Regexp.last_match(2)}#{Regexp.last_match(1)}"
+          bitString = bitString[8..15] + bitString[0..7]
         end
         if compact
 
@@ -2035,12 +2003,12 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
               end
               num += 1900 if num < 1900
             end
-            num = format('%02d', num)
+            #num = format('%02d', num)
             string += '-' if [2,3,8,9].include?(dateFld)
             string += ':' if [5,6].include?(dateFld)
             string += ':' if [11,12].include?(dateFld)
             string += ' ' if [4,10].include?(dateFld)
-            string += num
+            string += format('%02d', num)
           else
 
             string += ' ' unless string =~ / (a|m|pt|dt|tt)$/i
@@ -2126,9 +2094,9 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
   #   usage:
   #     gds2File.returnXyAsArray(
-  #                     asInteger:  0|1    ## (optional) default is true. Return integer
+  #                     asInteger:  true|false    ## (optional) default is true. Return integer
   #                                          ## array or if false return array of reals.
-  #                     withClosure:  0|1  ## (optional) default is true. Whether to
+  #                     withClosure:  true|false  ## (optional) default is true. Whether to
   #                                          ##return a rectangle with 5 or 4 points.
   #                );
   #
@@ -2642,20 +2610,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   # == printStrans - prints a STRANS record
   #
   #   usage:
-  #     gds2File.printStrans( -reflect );
+  #     gds2File.printStrans(reflect: val);
   #
 
-  def printStrans(*arg)
-    reflect = arg['-reflect']
-    reflect = if !reflect || (reflect <= 0)
-
-                0
-
-              else
-
-                1
-              end
-    data = reflect + '0' * 15; ## 16 'bit' string
+  def printStrans(reflect: nil)
+    return if reflect.nil?
+    reflect_str = reflect ? '1' : '0'
+    data = reflect_str + '0' * 15; ## 16 'bit' string
     printGds2Record(type: 'STRANS', data: data)
   end
   ############################################################################
@@ -3434,20 +3395,18 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     if dt == NO_REC_DATA
       return ''
     elsif dt == INTEGER_2 || dt == INTEGER_4 || dt == REAL_8
-      return @CurrentDataList.sub!(/^,/, '').split(/,/)
+      return @CurrentDataList.sub(/^,/, '').split(/,/)
     elsif dt == ASCII_STRING
-      return @CurrentDataList.sub!(/\0/, '')
+      return @CurrentDataList.sub(/\0/, '')
     else ## bit_array
       return @CurrentDataList
     end
   end
   ############################################################################
-
   def readRecordTypeAndData
-    [recordtypestrings[@RecordType], @RecordData]
+    [RECORDTYPESTRINGS[@RecordType], @RecordData]
   end
   ############################################################################
-
   def skipGds2RecordData
     readGds2RecordHeader if @INHEADER != true; ## safety - need to read HEADER if INHEADER == UNKNOWN or false
     @INHEADER = false
@@ -3550,17 +3509,6 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   def subbyte
     (what, where, howmuch) = @_
     what.unpack("x#{where} C#{howmuch}")
-  end
-  ############################################################################
-
-  # return GDS2 module version string
-  def version ## GDS2::version();
-    VERSION
-  end
-  ############################################################################
-  # return GDS2 module revision string
-  def revision ## GDS2::revision();
-    REVISION
   end
   ############################################################################
 

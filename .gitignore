@@ -1,5 +1,7 @@
 # gitignore
 *~
 *.gds
+*.gdt
+*.txt
 *.gds2
-
+coverage
