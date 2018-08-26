@@ -4,7 +4,7 @@ task :sanity do
 end
 
 task :rspec do
-  sh "rspec -f d"
+  sh "rspec -f d --fail-fast"
 end
 
 task :default => :rspec
