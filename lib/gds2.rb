@@ -1140,24 +1140,11 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
     x = snap_int(x)
     y = snap_int(y)
 
-    raise "Invalid font, must be in 0..3" unless (0..3).include?(font)
-
-    v_align = case vertical
-              when :top then '00'
-              when :bottom then '10'
-              else '01' # :middle
-              end
-    h_align = case horizontal
-              when :left then '00'
-              when :right then '10'
-              else '01' # :center
-              end
-    presString = '0' * 10 + format('%02d', font.to_s(2)) + "#{v_align}#{h_align}"
 
     printGds2Record(type: 'TEXT')
     printGds2Record(type: 'LAYER', data: layer)
     printGds2Record(type: 'TEXTTYPE', data: textType)
-    printGds2Record(type: 'PRESENTATION', data: presString) if font || vertical || horizontal
+    printPresentation(font: font, vertical: vertical, horizontal: horizontal) if font || vertical || horizontal
     if angle || mag || reflect
       printStrans(reflect: reflect)
       printMag(num: mag) if mag
@@ -2282,7 +2269,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printElkey(num: nil)
-    raise 'printElkey expects a number. Missing num: #.#' unless num
+    raise 'printElkey expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'ELKEY', data: num)
   end
   ############################################################################
@@ -2302,7 +2289,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printEndextn(num: nil)
-    raise 'printEndextn expects a extension number. Missing num: #.#' unless num
+    raise 'printEndextn expects a extension number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'ENDEXTN', data: snap_int(num))
   end
   ############################################################################
@@ -2332,13 +2319,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printFonts(string: nil)
-    raise "printFonts expects a string. Missing string: 'text'" unless string
+    raise "printFonts expects a string. Missing string: 'text'" unless string.is_a? String
     printGds2Record(type: 'FONTS', data: string)
   end
   ############################################################################
 
   def printFormat(num: nil)
-    raise 'printFormat expects a number. Missing num: #.#' unless num
+    raise 'printFormat expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'FORMAT', data: num)
   end
   ############################################################################
@@ -2384,7 +2371,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #     printLibname(name: name);
   #
   def printLibname(name: nil)
-    raise "printLibname expects a library name. Missing name: 'name'"    unless name
+    raise "printLibname expects a library name. Missing name: 'name'"    unless name.is_a? String
     printGds2Record(type: 'LIBNAME', data: name)
   end
 
@@ -2395,14 +2382,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
   ############################################################################
   def printLinkkeys(num: nil)
-    raise 'printLinkkeys expects a number. Missing num: #.#' unless num
+    raise 'printLinkkeys expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'LINKKEYS', data: num)
   end
 
   ############################################################################
-  def printLinktype(*arg)
-    num = arg['-num']
-    raise 'printLinktype expects a number. Missing num: #.#' unless num
+  def printLinktype(num: nil)
+    raise 'printLinktype expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'LINKTYPE', data: num)
   end
 
@@ -2437,7 +2423,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
 
   ############################################################################
   def printMask(string: nil)
-    raise "printMask expects a string. Missing string: 'text'" unless string
+    raise "printMask expects a string. Missing string: 'text'" unless string.is_a? String
     printGds2Record(type: 'MASK', data: string)
   end
 
@@ -2455,13 +2441,13 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #                 );
   #
   def printNodetype (num: nil)
-    raise 'printNodetype expects a number. Missing num: #' unless num
+    raise 'printNodetype expects a number. Missing num: #' unless num.is_a? Numeric
     printGds2Record(type: 'NODETYPE', data: num)
   end
   ############################################################################
 
   def printPlex (num: nil)
-    raise 'printPlex expects a number. Missing num: #.#' unless num
+    raise 'printPlex expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'PLEX', data: num)
   end
   ############################################################################
@@ -2479,29 +2465,20 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #     gds2File.printPresentation(font: 0,-top,-left);
   #
 
-  def printPresentation(*arg)
-    font = arg['-font']
-    font = 0 if !font || (font < 0) || (font > 3)
-    font = format('%02d', font)
-
-    vertical
-    top = arg['-top']
-    middle = arg['-middle']
-    bottom = arg['-bottom']
-    vertical = if top; '00'
-               elsif bottom; '10'
-               else; '01'; end ## middle
-    horizontal
-    left   = arg['-left']
-    center = arg['-center']
-    right  = arg['-right']
-    if    left   horizontal = '00'
-    elsif right  horizontal = '10'
-    else horizontal = '01'
-    end ## center
-    bitstring = '0' * 10
-    bitstring += "#{font}#{vertical}#{horizontal}"
-    printGds2Record(type: 'PRESENTATION', data: bitstring)
+  def printPresentation(font: 0, vertical: nil, horizontal: nil)
+    raise "Invalid font, must be in 0..3" unless (0..3).include?(font)
+    v_align = case vertical
+              when :top then '00'
+              when :bottom then '10'
+              else '01' # :middle
+              end
+    h_align = case horizontal
+              when :left then '00'
+              when :right then '10'
+              else '01' # :center
+              end
+    pres_string = '0' * 10 + format('%02d', font.to_s(2)) + "#{v_align}#{h_align}"
+    printGds2Record(type: 'PRESENTATION', data: pres_string)
   end
   ############################################################################
 
@@ -2512,7 +2489,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printPropattr(num: nil)
-    raise 'printPropattr expects a number. Missing num: #' unless num
+    raise 'printPropattr expects a number. Missing num: #' unless num.is_a? Numeric
     printGds2Record(type: 'PROPATTR', data: num)
   end
   ############################################################################
@@ -2524,19 +2501,19 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printPropvalue(string: nil)
-    raise "printPropvalue expects a string. Missing string: 'text'" unless string
+    raise "printPropvalue expects a string. Missing string: 'text'" unless string.is_a? String
     printGds2Record(type: 'PROPVALUE', data: string)
   end
 
   ############################################################################
   def printReflibs(string: nil)
-    raise "printReflibs expects a string. Missing string: 'text'" unless string
+    raise "printReflibs expects a string. Missing string: 'text'" unless string.is_a? String
     printGds2Record(type: 'REFLIBS', data: string)
   end
   ############################################################################
 
   def printReserved(num: nil)
-    raise 'printReserved expects a number. Missing num: #.#' unless num
+    raise 'printReserved expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'RESERVED', data: num)
   end
   ############################################################################
@@ -2548,7 +2525,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printSname(name: nil)
-    raise "printSname expects a cell name. Missing name: 'text'" unless name
+    raise "printSname expects a cell name. Missing name: 'text'" unless name.is_a? String
     printGds2Record(type: 'SNAME', data: name)
   end
   ############################################################################
@@ -2589,7 +2566,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printString (string: nil)
-    raise "printString expects a string. Missing string: 'text'" unless string
+    raise "printString expects a string. Missing string: 'text'" unless string.is_a? String
     printGds2Record(type: 'STRING', data: string)
   end
   ############################################################################
@@ -2601,7 +2578,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printStrname(name: nil)
-    raise "printStrname expects a structure name. Missing name: 'name'" unless name
+    raise "printStrname expects a structure name. Missing name: 'name'" unless name.is_a? String
     printGds2Record(type: 'STRNAME', data: name)
   end
   ############################################################################
@@ -2612,19 +2589,19 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   ############################################################################
 
   def printStyptable(string: nil)
-    raise "printStyptable expects a string. Missing string: 'text'" unless string
+    raise "printStyptable expects a string. Missing string: 'text'" unless string.is_a? String
     printGds2Record(type: 'STYPTABLE', data: string)
   end
   ############################################################################
 
   def printTapecode (num: nil)
-    raise 'printTapecode expects a number. Missing num: #.#' unless num
+    raise 'printTapecode expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'TAPECODE', data: num)
   end
   ############################################################################
 
   def printTapenum (num: nil)
-    raise 'printTapenum expects a number. Missing num: #.#' unless num
+    raise 'printTapenum expects a number. Missing num: #.#' unless num.is_a? Numeric
     printGds2Record(type: 'TAPENUM', data: num)
   end
   ############################################################################
@@ -2641,7 +2618,7 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   #
 
   def printTexttype (num: nil)
-    raise 'printTexttype expects a number. Missing num: #' unless num
+    raise 'printTexttype expects a number. Missing num: #' unless num.is_a? Numeric
     num = 0 if num < 0
     printGds2Record(type: 'TEXTTYPE', data: num)
   end
@@ -2729,13 +2706,8 @@ def printText(string: nil, layer: 0, textType: 0, font: nil,
   def returnFilePosition
     @BytesDone
   end
-  ############################################################################
 
-  def tellSize ## old name
-    @BytesDone
-  end
   ############################################################################
-
   # == returnBgnextn - returns bgnextn if record is BGNEXTN else returns 0
   #
   #   usage:
